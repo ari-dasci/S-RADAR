@@ -5,6 +5,7 @@
 from inspect import signature
 from collections import defaultdict
 from abc import ABC, abstractmethod
+import inspect
 
 class BaseAnomalyDetection(ABC):
     """
@@ -12,12 +13,12 @@ class BaseAnomalyDetection(ABC):
 
     Attributes
     ----------
-    decision_scores_ : numpy array of shape (n_samples,)
+    decision_scores : numpy array of shape (n_samples,)
         The outlier scores of the training data.
         The higher, the more abnormal. Outliers tend to have higher
         scores. This value is available once the detector is fitted.
 
-    label_parser_ : function of shape (n_samples,) with the 
+    label_parser : function of shape (n_samples,) with the 
         specific methods or operations to apply to the score values.
     """
     
@@ -89,6 +90,7 @@ class BaseAnomalyDetection(ABC):
         # fetch the constructor or the original constructor before
         # deprecation wrapping if any
         init = getattr(cls.__init__, "deprecated_original", cls.__init__)
+        
         if init is object.__init__:
             # No explicit constructor to introspect
             return []
@@ -100,7 +102,7 @@ class BaseAnomalyDetection(ABC):
         parameters = [
             p
             for p in init_signature.parameters.values()
-            if p.name != "self" and p.kind != p.VAR_KEYWORD
+            if p.name != "self" and p.kind != p.VAR_KEYWORD and p.name != "label_parser" and p.name != "algorithm"
         ]
         for p in parameters:
             if p.kind == p.VAR_POSITIONAL:
@@ -114,6 +116,7 @@ class BaseAnomalyDetection(ABC):
         # Extract and sort argument names excluding 'self'
         return sorted([p.name for p in parameters])
 
+    
     def get_params(self, deep=True):
         """Get parameters for this estimator.
 
@@ -164,13 +167,14 @@ class BaseAnomalyDetection(ABC):
         if not params:
             # Simple optimization to gain speed (inspect is slow)
             return self
-        valid_params = self.get_params(deep=True)
+        
+        valid_params = self.algorithm.get_params(deep=True)
 
         nested_params = defaultdict(dict)  # grouped by prefix
         for key, value in params.items():
             key, delim, sub_key = key.partition("__")
             if key not in valid_params:
-                local_valid_params = self._get_param_names()
+                local_valid_params = self.algorithm._get_param_names()
                 raise ValueError(
                     f"Invalid parameter {key!r} for estimator {self}. "
                     f"Valid parameters are: {local_valid_params!r}."
