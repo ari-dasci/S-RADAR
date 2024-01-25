@@ -14,12 +14,13 @@ class BaseAnomalyDetection(ABC):
     Attributes
     ----------
     decision_scores : numpy array of shape (n_samples,)
-        The outlier scores of the training data.
+        The outlier scores of the training data 
         The higher, the more abnormal. Outliers tend to have higher
         scores. This value is available once the detector is fitted.
 
     label_parser : function of shape (n_samples,) with the 
         specific methods or operations to apply to the score values.
+
     """
     
     @abstractmethod
@@ -83,41 +84,8 @@ class BaseAnomalyDetection(ABC):
         """
         pass
 
-
-    @classmethod
-    def _get_param_names(cls):
-        """Get parameter names for the estimator"""
-        # fetch the constructor or the original constructor before
-        # deprecation wrapping if any
-        init = getattr(cls.__init__, "deprecated_original", cls.__init__)
-        
-        if init is object.__init__:
-            # No explicit constructor to introspect
-            return []
-
-        # introspect the constructor arguments to find the model parameters
-        # to represent
-        init_signature = inspect.signature(init)
-        # Consider the constructor parameters excluding 'self'
-        parameters = [
-            p
-            for p in init_signature.parameters.values()
-            if p.name != "self" and p.kind != p.VAR_KEYWORD and p.name != "label_parser" and p.name != "algorithm"
-        ]
-        for p in parameters:
-            if p.kind == p.VAR_POSITIONAL:
-                raise RuntimeError(
-                    "scikit-learn estimators should always "
-                    "specify their parameters in the signature"
-                    " of their __init__ (no varargs)."
-                    " %s with constructor %s doesn't "
-                    " follow this convention." % (cls, init_signature)
-                )
-        # Extract and sort argument names excluding 'self'
-        return sorted([p.name for p in parameters])
-
-    
-    def get_params(self, deep=True):
+    @abstractmethod
+    def get_params(self):
         """Get parameters for this estimator.
 
         See http://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html
@@ -134,16 +102,9 @@ class BaseAnomalyDetection(ABC):
         params : mapping of string to any
             Parameter names mapped to their values.
         """
-        out = dict()
-        for key in self._get_param_names():
-            value = getattr(self, key)
-            if deep and hasattr(value, "get_params") and not isinstance(value, type):
-                deep_items = value.get_params().items()
-                out.update((key + "__" + k, val) for k, val in deep_items)
-            out[key] = value
-        return out
+        pass
 
-        
+    @abstractmethod
     def set_params(self, **params):
         """Set the parameters of this estimator.
         See http://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html
@@ -164,29 +125,4 @@ class BaseAnomalyDetection(ABC):
         self : estimator instance
             Estimator instance.
         """
-        if not params:
-            # Simple optimization to gain speed (inspect is slow)
-            return self
-        
-        valid_params = self.algorithm.get_params(deep=True)
-
-        nested_params = defaultdict(dict)  # grouped by prefix
-        for key, value in params.items():
-            key, delim, sub_key = key.partition("__")
-            if key not in valid_params:
-                local_valid_params = self.algorithm._get_param_names()
-                raise ValueError(
-                    f"Invalid parameter {key!r} for estimator {self}. "
-                    f"Valid parameters are: {local_valid_params!r}."
-                )
-
-            if delim:
-                nested_params[key][sub_key] = value
-            else:
-                setattr(self, key, value)
-                valid_params[key] = value
-
-        for key, sub_params in nested_params.items():
-            valid_params[key].set_params(**sub_params)
-
-        return self
+        pass
