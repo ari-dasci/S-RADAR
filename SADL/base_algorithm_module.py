@@ -24,8 +24,8 @@ class BaseAnomalyDetection(ABC):
     """
     
     @abstractmethod
-    def __init__(self):
-        pass
+    def __init__(self, **kwargs):
+        self.label_parser = kwargs.get('label_parser', None)
 
     @abstractmethod
     def fit(self, X, y=None):
@@ -102,7 +102,7 @@ class BaseAnomalyDetection(ABC):
         params : mapping of string to any
             Parameter names mapped to their values.
         """
-        pass
+        return ['label_parser']
 
     @abstractmethod
     def set_params(self, **params):
@@ -125,4 +125,14 @@ class BaseAnomalyDetection(ABC):
         self : estimator instance
             Estimator instance.
         """
-        pass
+        if not params:
+            # Simple optimization to gain speed (inspect is slow)
+            return self
+        
+        valid_params = self.get_params()
+
+        for key, value in params.items():
+            if key == "label_parser":
+                setattr(self, key, value)
+
+        return self

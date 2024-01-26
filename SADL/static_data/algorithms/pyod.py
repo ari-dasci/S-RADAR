@@ -3,7 +3,7 @@ from pyod.models.cblof import CBLOF
 from pyod.models.abod import ABOD
 from inspect import signature
 from ...base_utils_module import check
-import config_pyod #TODO: preguntar a nacho si esto esta bien
+from .config_pyod import PYOD_PARAMETERS #TODO: preguntar a nacho si esto esta bien
 from collections import defaultdict
 
 pyod_algorithms = {
@@ -14,8 +14,8 @@ pyod_algorithms = {
 class PyodAnomalyDetection(BaseAnomalyDetection):
 
     def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         algorithm = kwargs.get('algorithm', 'abod')  # Default to ABOD
-        
         if algorithm in pyod_algorithms:
             selected_class = pyod_algorithms[algorithm]
         else:
@@ -26,16 +26,30 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
         self.set_params(**kwargs)
 
     def fit(self, X, y=None):
-        self.model.fit(X, y)
+        try:
+            self.model.fit(X, y)
+        except Exception as e:
+            print("PYODerror fit():", str(e))
+            print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
+        return self
 
     def decision_function(self, X):
-        self.model.decision_function(X)
+        try:
+            return self.model.decision_function(X)
+        except Exception as e:
+            print("PYODerror decision_function():", str(e))
+            print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
 
     def predict(self, X):
 
-        #if "label_parser" in self.key
+        #if "label_parser" in 
         X = self.label_parser(X)
-        self.model.predict(X)
+        try:
+            self.model.predict(X)
+        except Exception as e:
+            print("PYODerror predict():", str(e))
+            print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
+        
 
     def set_params(self, **params): #Este setea sus propios parametros
         super().set_params(**params) #Llama al base para setear sus parametros en caso de que los hubiera
@@ -57,13 +71,6 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
                         f"Invalid parameter {key!r} for estimator {self}.{self.algorithm} "
                         f"Valid parameters are: {valid_params!r}."
                     )
-                else:
-                    #Load config parameters for the particular algorithm
-                    config_pyod['PYOD_PARAMETERS'][self.algorithm.__class__.__name__]
-                    #if not check() de la variable es adecuado
-                    #Solo print del error, el valor de la variable se setea al default
-                    #Si hay parametro por defecto se pone, si no, no se podría instanciar el modelo
-                    #params[key] = valid_params[key]
                     
         if not model_error:
             self.model = self.algorithm()
