@@ -1,14 +1,19 @@
-from ...base_algorithm_module import BaseAnomalyDetection
+import sys 
+import os
+import pandas
+from SADL.base_algorithm_module import BaseAnomalyDetection
 from pyod.models.cblof import CBLOF
 from pyod.models.abod import ABOD
+from pyod.models.alad import ALAD
+
+
 from inspect import signature
-from ...base_utils_module import check
-from .config_pyod import PYOD_PARAMETERS #TODO: preguntar a nacho si esto esta bien
 from collections import defaultdict
 
 pyod_algorithms = {
     "cblof" : CBLOF,
     "abod" : ABOD,
+    "alad" : ALAD,
 }
 
 class PyodAnomalyDetection(BaseAnomalyDetection):
@@ -26,6 +31,21 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
         self.set_params(**kwargs)
 
     def fit(self, X, y=None):
+        """Fit detector. y is ignored in unsupervised methods.
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The input samples.
+
+        y : Ignored
+            Not used, present for API consistency by convention.
+
+        Returns
+        -------
+        self : object
+            Fitted estimator.
+        """
         try:
             self.model.fit(X, y)
         except Exception as e:
@@ -34,6 +54,19 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
         return self
 
     def decision_function(self, X):
+        """Predict raw anomaly score of X using the fitted detector.
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The training input samples. Sparse matrices are accepted only
+            if they are supported by the base estimator.
+
+        Returns
+        -------
+        anomaly_scores : numpy array of shape (n_samples,)
+            The anomaly score of the input samples.
+        """
         try:
             return self.model.decision_function(X)
         except Exception as e:
@@ -42,16 +75,22 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
 
     def predict(self, X):
 
-        #if "label_parser" in 
-        X = self.label_parser(X)
-        try:
-            self.model.predict(X)
-        except Exception as e:
-            print("PYODerror predict():", str(e))
-            print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
-        
+        if "label_parser" in self.get_params().keys() and self.label_parser != None:
+            return self.label_parser(X)
+        else:
+            try:
+                return self.model.predict(X)
+            except Exception as e:
+                print("PYODerror predict():", str(e))
+                print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
+            
 
     def set_params(self, **params): #Este setea sus propios parametros
+        """Set the parameters of this estimator.
+        Returns
+        -------
+        self : object
+        """
         super().set_params(**params) #Llama al base para setear sus parametros en caso de que los hubiera
 
         if not params:
@@ -80,7 +119,15 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
         return self
 
     def get_params(self):
+        """Get parameters for this estimator.
+
+        Returns
+        -------
+        params : mapping of string to any
+            Parameter names mapped to their values.
+        """
         out = dict()
+        out = super().get_params()
         
         init = getattr(self.algorithm.__init__, 'deprecated_original', self.algorithm.__init__)
         if init is object.__init__:
@@ -104,12 +151,12 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
         param_names = sorted([p.name for p in parameters])
         
         nuevo_modelo = self.algorithm()
-        out["algorithm"] = None
+        out["algorithm"] = self.algorithm.__name__
         for key in param_names:
             if hasattr(self.model, key):
                 out[key] = getattr(self.model, key)
             else:
-                out[key] = getattr(nuevo_modelo, key)
+                out[key] = getattr(nuevo_modelo, key, None) #Default value or None value
 
         return out
 
