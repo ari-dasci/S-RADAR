@@ -5,7 +5,6 @@
 from inspect import signature
 from collections import defaultdict
 from abc import ABC, abstractmethod
-import inspect
 
 class BaseAnomalyDetection(ABC):
     """
@@ -102,7 +101,9 @@ class BaseAnomalyDetection(ABC):
         params : mapping of string to any
             Parameter names mapped to their values.
         """
-        return ['label_parser']
+        out = dict()
+        out['label_parser'] = self.label_parser
+        return out
 
     @abstractmethod
     def set_params(self, **params):
