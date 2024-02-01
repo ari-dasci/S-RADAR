@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 
 class BaseAnomalyDetection(ABC):
     """
-    Abstract Base class for every AD library to define the main behaviour of every library and specific algorithm
+    Abstract Base class for every AD library to define the main behaviour of every library and specific algorithm_
 
     Attributes
     ----------
