@@ -5,6 +5,20 @@ from SADL.base_algorithm_module import BaseAnomalyDetection
 from pyod.models.cblof import CBLOF
 from pyod.models.abod import ABOD
 from pyod.models.alad import ALAD
+from pyod.models.anogan import AnoGAN
+from pyod.models.feature_bagging import FeatureBagging
+from pyod.models.hbos import HBOS
+from pyod.models.iforest import IForest
+from pyod.models.knn import KNN
+from pyod.models.lof import LOF
+from pyod.models.mcd import MCD
+from pyod.models.ocsvm import OCSVM
+from pyod.models.pca import PCA
+from pyod.models.lscp import LSCP
+from pyod.models.inne import INNE
+from pyod.models.gmm import GMM
+from pyod.models.kde import KDE
+from pyod.models.lmdd import LMDD
 
 
 from inspect import signature
@@ -14,19 +28,28 @@ pyod_algorithms = {
     "cblof" : CBLOF,
     "abod" : ABOD,
     "alad" : ALAD,
+    "anogan": AnoGAN,
+    "feature_bagging": FeatureBagging,
+    "hbos": HBOS,
+    "iforest" : IForest,
+    "knn" : KNN,
+    "lof" : LOF,
+    "mcd" : MCD,
+    "ocsvm" : OCSVM,
+    "pca" : PCA,
+    "lscp" : LSCP,
+    "inne" : INNE,
+    "gmm" : GMM,
+    "kde" : KDE,
+    "lmdd" : LMDD,
 }
 
 class PyodAnomalyDetection(BaseAnomalyDetection):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        algorithm = kwargs.get('algorithm', 'abod')  # Default to ABOD
-        if algorithm in pyod_algorithms:
-            selected_class = pyod_algorithms[algorithm]
-        else:
-            selected_class = ABOD
+        self.algorithm_ = pyod_algorithms[kwargs.get('algorithm_', 'abod')]# Default to ABOD
 
-        self.algorithm = selected_class
         self.model = None
         self.set_params(**kwargs)
 
@@ -97,22 +120,30 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
             # Simple optimization to gain speed (inspect is slow)
             return self
         
+        self.algorithm_ = pyod_algorithms[params.get('algorithm_', 'abod')]# Default to ABOD
+
         valid_params = self.get_params()
-        valid_params["algorithm"] = params["algorithm"]
-        setattr(self.algorithm,"algorithm",valid_params["algorithm"])
+        setattr(self.algorithm_,"algorithm_",valid_params["algorithm_"])
 
         #Setear el modelo particular
         model_error = False
         for key, value in params.items():
-            if key != "algorithm" and key != "label_parser": #TODO: se puede hacer un get_local_params para ver los parametros de la clase padre para que se los salte
+            if key != "algorithm_" and key != "label_parser": #TODO: se puede hacer un get_local_params para ver los parametros de la clase padre para que se los salte
                 if key not in valid_params: #Si hay alguna variable no aceptada por el modelo 
                     raise ValueError(
-                        f"Invalid parameter {key!r} for estimator {self}.{self.algorithm} "
+                        f"Invalid parameter {key!r} for estimator {self}.{self.algorithm_} "
                         f"Valid parameters are: {valid_params!r}."
                     )
-                    
+
+        # Set positional parameters specific to the model
+        positional_params = {}
+        init_signature = signature(self.algorithm_.__init__)
+        for param_name, param in init_signature.parameters.items():
+            if param_name != 'self' and param.default == param.empty:  # Check for positional parameters
+                positional_params[param_name] = params[param_name]
+
         if not model_error:
-            self.model = self.algorithm()
+            self.model = self.algorithm_(**positional_params)
             for key, value in params.items():
                 setattr(self.model, key, value)
 
@@ -129,13 +160,13 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
         out = dict()
         out = super().get_params()
         
-        init = getattr(self.algorithm.__init__, 'deprecated_original', self.algorithm.__init__)
+        init = getattr(self.algorithm_.__init__, 'deprecated_original', self.algorithm_.__init__)
         if init is object.__init__:
             # No explicit constructor to introspect
             param_names = []
         # intrpect the constructor arguments to find the model parameters
         # to represent
-        init_signature = signature(self.algorithm.__init__)
+        init_signature = signature(self.algorithm_.__init__)
         # Consider the constructor parameters excluding 'self'
         parameters = [p for p in init_signature.parameters.values()
                       if p.name != 'self' and p.kind != p.VAR_KEYWORD]
@@ -146,18 +177,26 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
                                    " of their __init__ (no varargs)."
                                    " %s with constructor %s doesn't "
                                    " follow this convention."
-                                   % (self.algorithm, init_signature))
+                                   % (self.algorithm_, init_signature))
         # Extract and sort argument names excluding 'self'
         param_names = sorted([p.name for p in parameters])
         
-        nuevo_modelo = self.algorithm()
-        out["algorithm"] = self.algorithm.__name__
+        # Set positional parameters specific to the model
+        positional_params = {}
+        init_signature = signature(self.algorithm_.__init__)
+        for param_name, param in init_signature.parameters.items():
+            if param_name != 'self' and param.default == param.empty:  # Check for positional parameters
+                positional_params[param_name] = [LOF(),LOF()] #TODO arreglar esto
+
+
+        nuevo_modelo = self.algorithm_(**positional_params)
+        out["algorithm_"] = self.algorithm_.__name__
         for key in param_names:
             if hasattr(self.model, key):
                 out[key] = getattr(self.model, key)
             else:
                 out[key] = getattr(nuevo_modelo, key, None) #Default value or None value
-
+        print(out)
         return out
 
     
