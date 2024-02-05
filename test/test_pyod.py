@@ -1,7 +1,5 @@
 import unittest
-import os
 from os import path
-import sys
 import numpy as np
 from sklearn.utils.validation import check_X_y
 from sklearn.model_selection import train_test_split
@@ -445,7 +443,7 @@ class TestLSCP(unittest.TestCase):
 
         kwargs_lof = {"algorithm_": "lof"}
 
-        self.detector_list = [pyod.PyodAnomalyDetection(**kwargs_lof), pyod.PyodAnomalyDetection(**kwargs_lof)]
+        self.detector_list = [pyod.PyodAnomalyDetection(**kwargs_lof).model, pyod.PyodAnomalyDetection(**kwargs_lof).model]
 
         kwargs = {"algorithm_": "lscp", "detector_list": self.detector_list}
 
