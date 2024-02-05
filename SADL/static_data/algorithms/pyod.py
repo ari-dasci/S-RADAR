@@ -1,6 +1,3 @@
-import sys 
-import os
-import pandas
 from SADL.base_algorithm_module import BaseAnomalyDetection
 from pyod.models.cblof import CBLOF
 from pyod.models.abod import ABOD
@@ -20,9 +17,7 @@ from pyod.models.gmm import GMM
 from pyod.models.kde import KDE
 from pyod.models.lmdd import LMDD
 
-
 from inspect import signature
-from collections import defaultdict
 
 pyod_algorithms = {
     "cblof" : CBLOF,
@@ -114,6 +109,7 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
         -------
         self : object
         """
+        
         super().set_params(**params) #Llama al base para setear sus parametros en caso de que los hubiera
 
         if not params:
@@ -121,10 +117,11 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
             return self
         
         self.algorithm_ = pyod_algorithms[params.get('algorithm_', 'abod')]# Default to ABOD
-
-        valid_params = self.get_params()
+        
+        valid_params = self.get_default_params(**params)
+        
         setattr(self.algorithm_,"algorithm_",valid_params["algorithm_"])
-
+   
         #Setear el modelo particular
         model_error = False
         for key, value in params.items():
@@ -140,17 +137,26 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
         init_signature = signature(self.algorithm_.__init__)
         for param_name, param in init_signature.parameters.items():
             if param_name != 'self' and param.default == param.empty:  # Check for positional parameters
-                positional_params[param_name] = params[param_name]
+                if param_name in params.keys():
+                    positional_params[param_name] = params[param_name]
 
         if not model_error:
-            self.model = self.algorithm_(**positional_params)
+            try:
+                self.model = self.algorithm_(**positional_params)
+            except Exception as e:
+                print("PYODerror: ", str(e))
+                print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
+                raise
+
             for key, value in params.items():
                 setattr(self.model, key, value)
 
         return self
+    
 
-    def get_params(self):
-        """Get parameters for this estimator.
+    def get_default_params(self, **params): #Get default params based on the positional params already given
+        """Get DEFAULT parameters for this estimator, params is used to configure positional parameters in order to
+        obtain default parameters of the object.
 
         Returns
         -------
@@ -184,19 +190,52 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
         # Set positional parameters specific to the model
         positional_params = {}
         init_signature = signature(self.algorithm_.__init__)
+        
         for param_name, param in init_signature.parameters.items():
             if param_name != 'self' and param.default == param.empty:  # Check for positional parameters
-                positional_params[param_name] = [LOF(),LOF()] #TODO arreglar esto
+                if param_name in params.keys():
+                    positional_params[param_name] = params[param_name]
 
+        try:
+            nuevo_modelo = self.algorithm_(**positional_params)
+        except Exception as e:
+            print("PYODerror: ", str(e))
+            print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
+            raise
 
-        nuevo_modelo = self.algorithm_(**positional_params)
         out["algorithm_"] = self.algorithm_.__name__
         for key in param_names:
             if hasattr(self.model, key):
                 out[key] = getattr(self.model, key)
             else:
                 out[key] = getattr(nuevo_modelo, key, None) #Default value or None value
-        print(out)
+
+        return out
+    
+
+    def get_params(self):
+        """Get parameters for this estimator.
+
+        Returns
+        -------
+        params : mapping of string to any
+            Parameter names mapped to their values.
+        """
+
+        out = dict()
+        out = super().get_params()
+        out["algorithm_"] = self.algorithm_.__name__
+
+        try:
+            param_names = self.model.get_params()
+        except Exception as e:
+            print("PYODerror get_params():", str(e))
+            print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
+            
+        for key in param_names:
+            if hasattr(self.model, key):
+                out[key] = getattr(self.model, key)
+
         return out
 
     

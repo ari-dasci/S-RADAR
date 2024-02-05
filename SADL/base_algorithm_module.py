@@ -130,7 +130,7 @@ class BaseAnomalyDetection(ABC):
             # Simple optimization to gain speed (inspect is slow)
             return self
         
-        valid_params = self.get_params()
+#        valid_params = self.get_params()
 
         for key, value in params.items():
             if key == "label_parser":
