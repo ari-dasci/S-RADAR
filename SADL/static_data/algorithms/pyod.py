@@ -92,7 +92,25 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
             print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
 
     def predict(self, X):
+        """Predict raw anomaly scores of X using the fitted detector.
 
+        The anomaly score of an input sample is computed based on the fitted
+        detector. For consistency, outliers are assigned with
+        higher anomaly scores.
+
+        If label_parser is an attribute, then we execute the particular predict function
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The input samples. Sparse matrices are accepted only
+            if they are supported by the base estimator.
+
+        Returns
+        -------
+        anomaly_scores : numpy array of shape (n_samples,)
+            The anomaly score of the input samples.
+        """
         if "label_parser" in self.get_params().keys() and self.label_parser != None:
             return self.label_parser(X)
         else:
