@@ -24,6 +24,21 @@ class SkLearnAnomalyDetection(BaseAnomalyDetection):
 
     
     def fit(self, X, y=None):
+        """Fit detector. y is ignored in unsupervised methods.
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The input samples.
+
+        y : Ignored
+            Not used, present for API consistency by convention.
+
+        Returns
+        -------
+        self : object
+            Fitted estimator.
+        """
         try:
             self.model.fit(X, y)
         except Exception as e:
@@ -33,6 +48,18 @@ class SkLearnAnomalyDetection(BaseAnomalyDetection):
     
 
     def decision_function(self, X):
+        """Predict raw anomaly score of X using the fitted detector.
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The training input samples.
+
+        Returns
+        -------
+        anomaly_scores : numpy array of shape (n_samples,)
+            The anomaly score of the input samples.
+        """
         try:
             return self.model.decision_function(X)
         except Exception as e:
@@ -40,7 +67,19 @@ class SkLearnAnomalyDetection(BaseAnomalyDetection):
             print("For further reference please see: https://scikit-learn.org/stable/modules/classes.html")
 
     def predict(self, X):
+        """
+        Predict labels (1 inlier, -1 outlier) of X according to fitted model.
 
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The data matrix.
+
+        Returns
+        -------
+        is_inlier : ndarray of shape (n_samples,)
+            Returns -1 for anomalies/outliers and +1 for inliers.
+        """
         if "label_parser" in self.get_params().keys() and self.label_parser != None:
             return self.label_parser(X)
         else:
@@ -112,7 +151,11 @@ class SkLearnAnomalyDetection(BaseAnomalyDetection):
 
 
     def set_params(self, **params): #Este setea sus propios parametros
-        
+        """Set the parameters of this estimator.
+        Returns
+        -------
+        self : object
+        """
         super().set_params(**params) #Llama al base para setear sus parametros en caso de que los hubiera
 
         if not params:
@@ -158,6 +201,13 @@ class SkLearnAnomalyDetection(BaseAnomalyDetection):
     
     
     def get_params(self):
+        """Get parameters for this estimator.
+
+        Returns
+        -------
+        params : mapping of string to any
+            Parameter names mapped to their values.
+        """
         out = dict()
         out = super().get_params()
         out["algorithm_"] = self.algorithm_.__name__
