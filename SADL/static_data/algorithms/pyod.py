@@ -39,7 +39,7 @@ pyod_algorithms = {
     "lmdd" : LMDD,
 }
 
-class PyodAnomalyDetection(BaseAnomalyDetection):
+class TSFEDLAnomalyDetection(BaseAnomalyDetection):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
