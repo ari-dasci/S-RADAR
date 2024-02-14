@@ -1,43 +1,75 @@
 from SADL.base_algorithm_module import BaseAnomalyDetection
 import pytorch_lightning as pl
 import numpy as np
+import traceback
+from torch.nn import functional as F
+import torch
 from inspect import signature
 from TSFEDL.models_pytorch import OhShuLih_Classifier
+from TSFEDL.models_pytorch import OhShuLih
 
 tsfedl_algorithms = {
     "ohshulih_classifier" : OhShuLih_Classifier,
+    "ohshulih" : OhShuLih,
 }
 
 class TsfedlAnomalyDetection(BaseAnomalyDetection):
+    """
+    Base module for any pyTorch Lightning based algorithm in TSFEDL library
 
+    Parameters
+    ----------
+        (super) label_parser: function of shape (n_samples,) with the 
+        specific methods or operations to apply to the score values.
+
+        algorithm_: class object of the specific model
+
+        model: object containing the specific model. To see the particular attributes of each model see: https://s-tsfe-dl.readthedocs.io/en/latest/index.html
+        
+        pytorch_params_: dict object of pl params for the Trainer object.
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.algorithm_ = tsfedl_algorithms[kwargs.get('algorithm_', 'ohshulih_classifier')]# Default to OhShuLih Classifier
 
         self.model = None
+        self.pytorch_params_ = {}
         self.set_params(**kwargs)
 
     def fit(self, X, y=None):
         try:
-            #self.model.fit(X, y)
+            if("pytorch_params_" in self.get_params().keys()):
+                trainer = pl.Trainer(**self.pytorch_params_)
+                trainer.fit(self.model, X)
+            else: 
+                pl.Trainer().fit(self.model, X)
         except Exception as e:
-            print("TSFEDLerror: ", str(e))
+            print("TSFEDLerror fit(): ", str(e))
             print("For further reference please see: https://s-tsfe-dl.readthedocs.io/en/latest/index.html")
+            raise
         return self
     
     def decision_function(self, X):
-        X_pred = self.model(X)
-        return np.sum(np.linalg.norm(X_pred-X), axis = 1)
+        decision_scores_list = []
+        for data, labels in X:
+            print(data.shape)
+            decision_scores = self.model(data)
+            print(decision_scores.shape)
+            #X_pred = decision_scores.detach().numpy()
+            #X = data.detach().numpy()
+            #X = np.repeat(X, 1000, axis=0).reshape(1, 1, -1)
+            #sum_of_norms = np.sum(np.linalg.norm(X_pred - X, axis=2))
+
+            #decision_scores_list.append(sum_of_norms)
+        
+        #return decision_scores_list
+        #return np.sum(np.linalg.norm(X_pred-X), axis = 1)
 
     def predict(self, X):
         if "label_parser" in self.get_params().keys() and self.label_parser != None:
             return self.label_parser(X)
         else:
-            try:
-                return self.model.predict(X)
-            except Exception as e:
-                print("TSFEDLerror predict():", str(e))
-                print("For further reference please see: https://s-tsfe-dl.readthedocs.io/en/latest/index.html")
+            print("TSFEDLerror predict(): no label_parser function set to make a prediction, please provide one.")
 
 
     def set_params(self, **params): #Este setea sus propios parametros
@@ -59,6 +91,15 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
         
         setattr(self.algorithm_,"algorithm_",valid_params["algorithm_"])
    
+
+        #Set specific pytorch params 
+        pytorch_params = {}
+        pytorch_signature = signature(pl.Trainer.__init__)
+        for param_name, param in pytorch_signature.parameters.items():
+            if param_name in params.keys():
+                pytorch_params[param_name] = params[param_name]            
+                del params[param_name]
+
         #Setear el modelo particular
         model_error = False
         for key, value in params.items():
@@ -77,16 +118,19 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
                 if param_name in params.keys():
                     positional_params[param_name] = params[param_name]
 
+       
         if not model_error:
             try:
                 self.model = self.algorithm_(**positional_params)
             except Exception as e:
-                print("TSFEDLerror predict():", str(e))
+                print("TSFEDLerror:", str(e))
                 print("For further reference please see: https://s-tsfe-dl.readthedocs.io/en/latest/index.html")
                 raise
 
             for key, value in params.items():
                 setattr(self.model, key, value)
+            for key, value in pytorch_params.items():
+                self.pytorch_params_[key] = value
 
         return self
     
@@ -136,11 +180,12 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
         try:
             nuevo_modelo = self.algorithm_(**positional_params)
         except Exception as e:
-            print("TSFEDLerror predict():", str(e))
+            print("TSFEDLerror:", str(e))
             print("For further reference please see: https://s-tsfe-dl.readthedocs.io/en/latest/index.html")
             raise
 
         out["algorithm_"] = self.algorithm_.__name__
+        out["pytorch_params_"] = {}
         for key in param_names:
             if hasattr(self.model, key):
                 out[key] = getattr(self.model, key)
@@ -163,14 +208,15 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
         out = super().get_params()
         out["algorithm_"] = self.algorithm_.__name__
 
-        try:
-            param_names = self.model.get_params()
-        except Exception as e:
-            print("TSFEDLerror predict():", str(e))
-            print("For further reference please see: https://s-tsfe-dl.readthedocs.io/en/latest/index.html")
-
+        init_signature = signature(self.algorithm_.__init__)
+        parameters = [p for p in init_signature.parameters.values()
+                      if p.name != 'self' and p.kind != p.VAR_KEYWORD]
+        param_names = sorted([p.name for p in parameters])
         for key in param_names:
             if hasattr(self.model, key):
                 out[key] = getattr(self.model, key)
+            else:
+                out[key] = getattr(self.model, key, None)
 
+        out["pytorch_params_"] = self.pytorch_params_
         return out

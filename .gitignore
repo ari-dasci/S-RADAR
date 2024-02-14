@@ -28,6 +28,8 @@ MANIFEST
 
 # My Test Data
 physionet.org/
+*test/
+lightning_logs/*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
