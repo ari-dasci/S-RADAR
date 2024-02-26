@@ -30,7 +30,9 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.algorithm_ = tsfedl_algorithms[kwargs.get('algorithm_', 'ohshulih_classifier')]# Default to OhShuLih Classifier
+        self.algorithm_ = tsfedl_algorithms[kwargs.get('algorithm_', 'ohshulih')]# Default to OhShuLih 
+
+        #DEfault top_module
 
         self.model = None
         self.pytorch_params_ = {}
@@ -50,20 +52,24 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
         return self
     
     def decision_function(self, X):
-        decision_scores_list = []
-        for data, labels in X:
-            print(data.shape)
-            decision_scores = self.model(data)
-            print(decision_scores.shape)
-            #X_pred = decision_scores.detach().numpy()
-            #X = data.detach().numpy()
-            #X = np.repeat(X, 1000, axis=0).reshape(1, 1, -1)
-            #sum_of_norms = np.sum(np.linalg.norm(X_pred - X, axis=2))
+        decision_scores_list = np.array([])
+        for data, y in X:
+            y_pred = self.model(data)
+            y_pred = y_pred.detach().numpy()
+            y = y.detach().numpy()
 
-            #decision_scores_list.append(sum_of_norms)
-        
-        #return decision_scores_list
-        #return np.sum(np.linalg.norm(X_pred-X), axis = 1)
+
+            #print(len(y.shape))
+            #print(len(y_pred.shape))
+
+            if y_pred.shape != y.shape:
+                raise Exception("TSFEDLerror decision_function(): y_pred.shape differs from y shape.")
+            else:
+                sum_of_norms = np.linalg.norm(y_pred - y, axis=-1)
+
+            decision_scores_list = np.append(decision_scores_list, sum_of_norms)
+
+        return decision_scores_list
 
     def predict(self, X):
         if "label_parser" in self.get_params().keys() and self.label_parser != None:
@@ -85,10 +91,10 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
             # Simple optimization to gain speed (inspect is slow)
             return self
         
-        self.algorithm_ = tsfedl_algorithms[params.get('algorithm_', 'ohshulih_classifier')]# Default to OhShuLih Classifier
+        self.algorithm_ = tsfedl_algorithms[params.get('algorithm_', 'ohshulih')]# Default to OhShuLih 
         
         valid_params = self.get_default_params(**params)
-        
+        print(valid_params)
         setattr(self.algorithm_,"algorithm_",valid_params["algorithm_"])
    
 
@@ -114,13 +120,18 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
         positional_params = {}
         init_signature = signature(self.algorithm_.__init__)
         for param_name, param in init_signature.parameters.items():
+            #print(param_name)
+            #print(params.keys())
             if param_name != 'self' and param.default == param.empty:  # Check for positional parameters
                 if param_name in params.keys():
                     positional_params[param_name] = params[param_name]
 
-       
+        
+
         if not model_error:
             try:
+                if "top_module" in params.keys():
+                    positional_params["top_module"] = params["top_module"]
                 self.model = self.algorithm_(**positional_params)
             except Exception as e:
                 print("TSFEDLerror:", str(e))
@@ -128,7 +139,8 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
                 raise
 
             for key, value in params.items():
-                setattr(self.model, key, value)
+                if key != "top_module":
+                    setattr(self.model, key, value)
             for key, value in pytorch_params.items():
                 self.pytorch_params_[key] = value
 
