@@ -5,12 +5,54 @@ import traceback
 from torch.nn import functional as F
 import torch
 from inspect import signature
-from TSFEDL.models_pytorch import OhShuLih_Classifier
 from TSFEDL.models_pytorch import OhShuLih
+from TSFEDL.models_pytorch import YiboGao
+from TSFEDL.models_pytorch import LihOhShu
+from TSFEDL.models_pytorch import YaoQihang
+from TSFEDL.models_pytorch import HtetMyetLynn
+from TSFEDL.models_pytorch import YildirimOzal
+from TSFEDL.models_pytorch import CaiWenjuan
+from TSFEDL.models_pytorch import ZhangJin
+from TSFEDL.models_pytorch import KongZhengmin
+from TSFEDL.models_pytorch import WeiXiaoyan
+from TSFEDL.models_pytorch import GaoJunLi
+from TSFEDL.models_pytorch import KhanZulfiqar
+from TSFEDL.models_pytorch import ZhengZhenyu
+from TSFEDL.models_pytorch import WangKejun
+from TSFEDL.models_pytorch import ChenChen
+from TSFEDL.models_pytorch import KimTaeYoung
+from TSFEDL.models_pytorch import GenMinxing
+from TSFEDL.models_pytorch import FuJiangmeng
+from TSFEDL.models_pytorch import ShiHaotian
+from TSFEDL.models_pytorch import HuangMeiLing
+from TSFEDL.models_pytorch import HongTan
+from TSFEDL.models_pytorch import SharPar
+from TSFEDL.models_pytorch import DaiXiLi
 
 tsfedl_algorithms = {
-    "ohshulih_classifier" : OhShuLih_Classifier,
     "ohshulih" : OhShuLih,
+    "yibogao": YiboGao,
+    "liohshu": LihOhShu,
+    "yaoqihang" : YaoQihang,
+    "htetmyetlynn" : HtetMyetLynn,
+    "yildirimozal" : YildirimOzal,
+    "caiwenjuan" : CaiWenjuan,
+    "zhangjin" : ZhangJin,
+    "kongzhengmin": KongZhengmin,
+    "weixiaoyan" : WeiXiaoyan,
+    "gaojunli": GaoJunLi,
+    "khanzulfiqar" : KhanZulfiqar,
+    "zhengzhenyu": ZhengZhenyu,
+    "wangkejun" : WangKejun,
+    "chenchen": ChenChen,
+    "kimtaeyoung" : KimTaeYoung,
+    "genminxing": GenMinxing,
+    "fujiangmeng" : FuJiangmeng,
+    "shihaotian" : ShiHaotian, 
+    "huangmeiling": HuangMeiLing,
+    "hongtan": HongTan,
+    "sharpar" : SharPar,
+    "daixili": DaiXiLi
 }
 
 class TsfedlAnomalyDetection(BaseAnomalyDetection):
@@ -55,13 +97,14 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
         decision_scores_list = np.array([])
         for data, y in X:
             y_pred = self.model(data)
-            y_pred = y_pred.detach().numpy()
-            y = y.detach().numpy()
 
+            y = y.squeeze().detach().numpy()
+            y_pred = y_pred.squeeze().detach().numpy()
 
-            #print(len(y.shape))
-            #print(len(y_pred.shape))
-
+            #print(y_pred.shape)
+            #print(y.shape)
+            #exit()
+            
             if y_pred.shape != y.shape:
                 raise Exception("TSFEDLerror decision_function(): y_pred.shape differs from y shape.")
             else:
