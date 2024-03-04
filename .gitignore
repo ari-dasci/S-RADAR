@@ -30,6 +30,7 @@ MANIFEST
 physionet.org/
 *test/
 lightning_logs/*
+kddcup*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
