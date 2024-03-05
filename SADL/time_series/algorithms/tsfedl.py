@@ -68,19 +68,33 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
 
         model: object containing the specific model. To see the particular attributes of each model see: https://s-tsfe-dl.readthedocs.io/en/latest/index.html
         
-        pytorch_params_: dict object of pl params for the Trainer object.
+        pytorch_params_: dict object of pl params for the Trainer object. To see the particular attributes: https://lightning.ai/docs/pytorch/stable/common/trainer.html
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.algorithm_ = tsfedl_algorithms[kwargs.get('algorithm_', 'ohshulih')]# Default to OhShuLih 
-
-        #DEfault top_module
+        self.algorithm_ = tsfedl_algorithms[kwargs.get('algorithm_', 'ohshulih')] #Default to OhShuLih 
 
         self.model = None
         self.pytorch_params_ = {}
         self.set_params(**kwargs)
 
     def fit(self, X, y=None):
+        """
+        Fit detector. y is ignored in unsupervised methods.
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The input samples.
+
+        y : Ignored
+            Not used, present for API consistency by convention.
+
+        Returns
+        -------
+        self : object
+            Fitted estimator.
+        """
         try:
             if("pytorch_params_" in self.get_params().keys()):
                 trainer = pl.Trainer(**self.pytorch_params_)
@@ -94,6 +108,19 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
         return self
     
     def decision_function(self, X):
+        """
+        Predict raw anomaly score of X using the fitted detector.
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The training input samples.
+
+        Returns
+        -------
+        decision_scores_list : numpy array of shape (n_samples,)
+            The anomaly score of the input samples.
+        """
         decision_scores_list = np.array([])
         for data, y in X:
             y_pred = self.model(data)
@@ -103,7 +130,6 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
 
             #print(y_pred.shape)
             #print(y.shape)
-            #exit()
             
             if y_pred.shape != y.shape:
                 raise Exception("TSFEDLerror decision_function(): y_pred.shape differs from y shape.")
@@ -115,6 +141,26 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
         return decision_scores_list
 
     def predict(self, X):
+        """
+        Predict raw anomaly scores of X using the fitted detector.
+
+        The anomaly score of an input sample is computed based on the fitted
+        detector. For consistency, outliers are assigned with
+        higher anomaly scores.
+
+        If label_parser is an attribute, then we execute the particular predict function
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The input samples. Sparse matrices are accepted only
+            if they are supported by the base estimator.
+
+        Returns
+        -------
+        anomaly_scores : numpy array of shape (n_samples,)
+            The anomaly score of the input samples.
+        """
         if "label_parser" in self.get_params().keys() and self.label_parser != None:
             return self.label_parser(X)
         else:
@@ -122,7 +168,8 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
 
 
     def set_params(self, **params): #Este setea sus propios parametros
-        """Set the parameters of this estimator.
+        """
+        Set the parameters of this estimator.
         Returns
         -------
         self : object
