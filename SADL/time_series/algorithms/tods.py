@@ -4,16 +4,44 @@ from tods.sk_interface.detection_algorithm.DeepLog_skinterface import DeepLogSKI
 from tods.detection_algorithm.DeepLog import DeepLogPrimitive
 from tods.sk_interface.detection_algorithm.Telemanom_skinterface import TelemanomSKI
 from tods.detection_algorithm.Telemanom import TelemanomPrimitive
-
+from tods.sk_interface.detection_algorithm.AutoRegODetector_skinterface import AutoRegODetectorSKI
+from tods.detection_algorithm.AutoRegODetect import AutoRegODetectorPrimitive
+from tods.sk_interface.detection_algorithm.KDiscordODetector_skinterface import KDiscordODetectorSKI
+from tods.detection_algorithm.KDiscordODetect import KDiscordODetectorPrimitive
+from tods.sk_interface.detection_algorithm.LSTMODetector_skinterface import LSTMODetectorSKI
+from tods.detection_algorithm.LSTMODetect import LSTMODetectorPrimitive
+from tods.sk_interface.detection_algorithm.MatrixProfile_skinterface import MatrixProfileSKI
+from tods.detection_algorithm.MatrixProfile import MatrixProfilePrimitive
+from tods.sk_interface.detection_algorithm.PCAODetector_skinterface import PCAODetectorSKI
+from tods.detection_algorithm.PCAODetect import PCAODetectorPrimitive
+from tods.sk_interface.detection_algorithm.SOD_skinterface import SODSKI
+from tods.detection_algorithm.PyodSOD import SODPrimitive
+from tods.sk_interface.detection_algorithm.SystemWiseDetection_skinterface import SystemWiseDetectionSKI
+from tods.detection_algorithm.SystemWiseDetection import SystemWiseDetectionPrimitive
 
 tods_algorithms = {
     "deep_log" : DeepLogSKI,
-    "telemanon" : TelemanomSKI
+    "telemanom" : TelemanomSKI,
+    "auto_reg" : AutoRegODetectorSKI,
+    "kdiscord" : KDiscordODetectorSKI,
+    "lstm" : LSTMODetectorSKI,
+    "matrix" : MatrixProfileSKI,
+    "pcao" : PCAODetectorSKI,
+    "sod" : SODSKI, 
+    "system_wise": SystemWiseDetectionSKI
+
 }
 
 corresponding_primitive = {
     "DeepLogSKI" : DeepLogPrimitive,
-    "TelemanomSKI" : TelemanomPrimitive 
+    "TelemanomSKI" : TelemanomPrimitive,
+    "AutoRegODetectorSKI" : AutoRegODetectorPrimitive,
+    "KDiscordODetectorSKI": KDiscordODetectorPrimitive,
+    "LSTMODetectorSKI" : LSTMODetectorPrimitive,
+    "MatrixProfileSKI" : MatrixProfilePrimitive,
+    "PCAODetectorSKI" : PCAODetectorPrimitive,
+    "SODSKI" : SODPrimitive,
+    "SystemWiseDetectionSKI" : SystemWiseDetectionPrimitive
 }
 
 class TodsAnomalyDetection(BaseAnomalyDetection):
@@ -58,14 +86,34 @@ class TodsAnomalyDetection(BaseAnomalyDetection):
             Fitted estimator.
         """
         try:
-            self.model.fit(X, y)
+            self.model.fit(X)
         except Exception as e:
-            print("TODSError predict():", str(e))
+            print("TODSError fit():", str(e))
             print("For further reference please see: https://tods-doc.github.io/index.html")
         return self
 
     def decision_function(self, X):
-        pass
+        """Predict raw anomaly score of X using the fitted detector.
+        The anomaly score of an input sample is computed based on different
+        detector algorithms. .
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The training input samples. Sparse matrices are accepted only
+            if they are supported by the base estimator.
+        
+        Returns
+        -------
+        anomaly_scores : numpy array of shape (n_samples,)
+            The anomaly score of the input samples.
+        """
+        try:
+            return self.model.clf_.decision_function(X)
+        except Exception as e:
+            print("TODSError decision_function():", str(e))
+            print("For further reference please see: https://tods-doc.github.io/index.html")
+        
 
     def predict(self, X):
         """Predict raw anomaly scores of X using the fitted detector.
@@ -112,44 +160,37 @@ class TodsAnomalyDetection(BaseAnomalyDetection):
         self.algorithm_ = tods_algorithms[params.get('algorithm_', 'deep_log')]# Default to DeepLog
 
         valid_params = self.get_default_params(**params)
-        print(valid_params)
+        #print(valid_params)
         setattr(self.algorithm_,"algorithm_",valid_params["algorithm_"])
 
         #Set specific primitive params 
         primitive_params = {}
         primitive_signature = self.algorithm_().primitives[0].hyperparams
-        print(primitive_signature)
         for param_name in primitive_signature:
             if param_name in params.keys():
-                primitive_params[param_name] = params[param_name]            
-        
+                primitive_params[param_name] = params[param_name]
+                del params[param_name]
+
         #Setear el modelo particular
-        model_error = False
         for key, value in params.items():
             if key != "algorithm_" and key != "label_parser": #TODO: se puede hacer un get_local_params para ver los parametros de la clase padre para que se los salte
-                if key not in valid_params: #Si hay alguna variable no aceptada por el modelo 
+                #Check special case on Hyperparams object
+                if key not in valid_params and key not in valid_params['primitive_params_'].keys(): #Si hay alguna variable no aceptada por el modelo 
                     raise ValueError(
                         f"Invalid parameter {key!r} for estimator {self}.{self.algorithm_} "
                         f"Valid parameters are: {valid_params!r}."
                     )
-
-
-        if not model_error:
-            try:
-                if "top_module" in params.keys():
-                    positional_params["top_module"] = params["top_module"]
-                self.model = self.algorithm_(**positional_params)
-            except Exception as e:
-                print("TSFEDLerror:", str(e))
-                print("For further reference please see: https://s-tsfe-dl.readthedocs.io/en/latest/index.html")
-                raise
-
-            for key, value in params.items():
-                if key != "top_module":
-                    setattr(self.model, key, value)
-            for key, value in pytorch_params.items():
-                self.pytorch_params_[key] = value
-
+        try:
+            self.model = self.algorithm_(**primitive_params)
+        except Exception as e:
+            print("TODSError:", str(e))
+            print("For further reference please see: https://tods-doc.github.io/index.html")
+            raise
+        
+        for key, value in params.items():
+            setattr(self.model, key, value)
+        self.primitive_params_ = self.model.primitives[0].hyperparams
+        
         return self
         
     def get_default_params(self, **params): #Get default params based on the positional params already given
@@ -173,7 +214,7 @@ class TodsAnomalyDetection(BaseAnomalyDetection):
             nuevo_modelo = self.algorithm_()
         except Exception as e:
             print("TODSError:", str(e))
-            print("For further reference please see: ")
+            print("For further reference please see: https://tods-doc.github.io/index.html")
             raise
 
         out["algorithm_"] = self.algorithm_.__name__
@@ -194,6 +235,6 @@ class TodsAnomalyDetection(BaseAnomalyDetection):
         out = dict()
         out = super().get_params()
         out["algorithm_"] = self.algorithm_.__name__
+        out["primitive_params_"] = self.primitive_params_
 
-
-        pass
+        return out
