@@ -1,4 +1,4 @@
-name: /mnt/homeGPU/mbautista/s-adl-new-env
+name: s-adl-new-env
 channels:
   - anaconda
   - defaults
@@ -249,4 +249,4 @@ dependencies:
     - xmltodict==0.13.0
     - yarl==1.9.4
     - zipp==3.17.0
-prefix: /mnt/homeGPU/mbautista/s-adl-new-env
+prefix: s-adl-new-env
