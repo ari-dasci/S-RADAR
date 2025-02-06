@@ -14,6 +14,7 @@ from flexanomalies.pool.primitives_deepmodel import (
     train_ae,
     set_aggregated_weights_ae,
     weights_collector_ae,
+    evaluate_global_model,
 )
 from flexanomalies.pool.primitives_cluster import (
     build_server_model_cl,
@@ -196,9 +197,13 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
             except Exception as e:
                 print(f"{self.algorithm_name}, predict():", str(e))
 
-    def evaluate(self, X_test, y_test):
+    def evaluate(self, X_test, y_test, label_test=None):
         if self.model is None:
             raise ValueError("The model must be trained before evaluate.")
+        
+        if label_test is not None and label_test.size > 0:
+            return evaluate_global_model(self.model, X_test, y_test, label_test)
+
         return self.model.evaluate(X_test, y_test)
 
     def set_params(self, **params):
@@ -231,7 +236,7 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
 
         # Obtain valid model parameters
         valid_params = self.get_default_params(**model_params)
-
+        
         # Assign algorithm name
         setattr(self.algorithm_, "algorithm_", valid_params["algorithm_"])
 
@@ -251,6 +256,7 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
                 if param_name in model_params:
                     positional_params[param_name] = model_params[param_name]
         # Init Model
+        
         try:
             self.model = self.algorithm_(**positional_params)
         except Exception as e:
@@ -296,13 +302,11 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
         """
         # Separating federated parameters from model parameters
         federated_params = {
-            k: v
-            for k, v in params.items()
-            if k in ["n_clients", "n_rounds"]
+            k: v for k, v in params.items() if k in ["n_clients", "n_rounds"]
         }
         model_params = {k: v for k, v in params.items() if k not in federated_params}
 
-        print(model_params)
+        
         out = super().get_params()
 
         init_signature = signature(self.algorithm_.__init__)
@@ -317,10 +321,9 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
             for p in init_signature.parameters.values()
             if p.name in model_params
         }
-        print(init_signature.parameters.values())
-
+        
         # Use the existing model or instantiate a new one if necessary.
-        print(positional_params)
+        
         model_instance = self.model or self.algorithm_(**positional_params)
 
         # Obtain model parameters
