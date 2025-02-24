@@ -10,7 +10,10 @@ class BasePreprocessing(ABC):
         pass
 
     @abstractmethod
-    def predict(self):
+    def transform(self):
         pass
-
+    
+    @abstractmethod
+    def inverse_transform(self, X):
+        pass 
     # [...] other possible methods
