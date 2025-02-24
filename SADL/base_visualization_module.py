@@ -10,7 +10,11 @@ class BaseVisualization(ABC):
         pass
 
     @abstractmethod
-    def predict(self):
+    def transform(self):
+        pass
+    
+    @abstractmethod
+    def show(self):
         pass
 
     # [...] other possible methods
