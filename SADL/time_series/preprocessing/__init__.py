@@ -1,5 +1,5 @@
-from . import tods
-from . import tsfedl
+from . import preprocessing_ts
+
 
 __all__ = ['preprocessing_ts']
 

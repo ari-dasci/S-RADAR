@@ -2,6 +2,23 @@ from ucimlrepo import fetch_ucirepo
 from io import BytesIO
 import requests
 import pandas as pd
+import zipfile
+
+"""
+Datasets used in anomaly detection (Source: UCI Machine Learning Repository)
+Source: https://archive.ics.uci.edu/ml/index.php
+
+Datasets used:
+ 1. "shuttle": Dataset on event classifications in a space shuttle, useful for identifying anomalies in control systems.
+ 2. "kddcup99": Dataset with network traffic logs, used to detect computer attacks and anomalies in security systems.
+ 3. "spambase": Dataset of e-mail labeled as spam or non-spam, ideal for detecting anomalies in the classification of messages.
+ 4. "mammographic_mass": Data on mammary tumors, used to identify anomalies in the classification of benign or malignant mammary masses.
+ 5. "arrhythmia": Electrocardiogram data, useful for detecting heart rhythm abnormalities.
+ 6. "default_of_credit_card_clients": Dataset containing financial information, used to detect clients with high risk of non-payment.
+ 7. "Wine Quality": Dataset to detect anomalies in the quality of wines according to various chemical characteristics.
+ 8. "Detection of IoT Botnet Attacks (N-BaIoT)": Used to detect botnet attacks on IoT devices, focused on identifying anomalous patterns in networks.
+ 9. "Human Activity Recognition Using Smartphones": A dataset that measures human activities using smartphone sensors, useful for detecting anomalies in human behavior.
+"""
 
 
 def global_load(name_dataset):
@@ -57,7 +74,31 @@ def load_from_url(url, **kwargs):
     dataset = pd.read_csv(BytesIO(data), **kwargs)
     return dataset
 
+def load_human_activity_recognition(url,**kwargs):
+    response = requests.get(url)
 
+    # Descomprimir el archivo ZIP
+    with zipfile.ZipFile(BytesIO(response.content)) as z:
+        # Listar los archivos dentro del ZIP
+        z.printdir()
+
+        # Extraer los archivos necesarios (X_train, X_test, y_train, y_test)
+        z.extract("UCI HAR Dataset/train/X_train.txt", "UCI_HAR")
+        z.extract("UCI HAR Dataset/test/X_test.txt", "UCI_HAR")
+        z.extract("UCI HAR Dataset/train/y_train.txt", "UCI_HAR")
+        z.extract("UCI HAR Dataset/test/y_test.txt", "UCI_HAR")
+
+    # Leer los archivos extraídos con pandas
+    X_train = pd.read_csv("UCI_HAR/UCI HAR Dataset/train/X_train.txt", **kwargs)
+    X_test = pd.read_csv("UCI_HAR/UCI HAR Dataset/test/X_test.txt", **kwargs)
+
+    y_train = pd.read_csv("UCI_HAR/UCI HAR Dataset/train/y_train.txt",**kwargs)
+    y_test = pd.read_csv("UCI_HAR/UCI HAR Dataset/test/y_test.txt", **kwargs)
+    
+    return X_train,X_test,y_train,y_test
+    
+    
+    
 
 datasets = {
     "shuttle": [load_from_id, {"id": 148}],
@@ -73,61 +114,17 @@ datasets = {
     "arrhythmia": [
         load_from_url,
         {
-            "url": "https://archive.ics.uci.edu/static/public/5/arrhythmia.zip",
-            "compression": "zip",
+            "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/arrhythmia/arrhythmia.data",
         },
     ],
+    "default_of_credit_card_clients": [load_from_id, {"id": 350}],
+    "detection_of_IoT_botnet_attacks_N_BaIoT":[
+        load_from_url,
+        {
+            "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/00442/Philips_B120N10_Baby_Monitor/benign_traffic.csv",
+        },
+    ],
+    'wine_quality':[load_from_id, {"id": 186}],
     
+    'human_activity_recognition':[load_human_activity_recognition, {"url": "https://archive.ics.uci.edu/ml/machine-learning-databases/00240/UCI%20HAR%20Dataset.zip", 'header':None, 'delim_whitespace':True}]
 }
-
-
-
-
-
-
-# DATASETS = {
-#     "kddcup99": "http://kdd.ics.uci.edu/databases/kddcup99/kddcup.data.gz",
-#     "spambase": "https://archive.ics.uci.edu/ml/machine-learning-databases/spambase/spambase.data",
-#     "shuttle": 'https://archive.ics.uci.edu/dataset/148/statlog+shuttle',
-   
-# }
-
-# def download_dataset(url, format="pandas", **kwargs):
-#     """Download a dataset into memory and load it as Pandas or NumPy without saving it to disk."""
-#     print(f"Downloading dataset from {url}...")
-#     try:
-#         data= requests.get(url)
-#     except Exception as e:
-#         raise ConnectionError(f"Failed to download dataset: {e}")
-    
-#     if format == "pandas":
-#         return pd.read_csv(io.BytesIO(data.content), **kwargs)
-#     elif format == "numpy":
-#         return pd.read_csv(io.BytesIO(data.content), **kwargs).to_numpy()
-#     else:
-#         raise ValueError("Format not supported. Use ‘pandas’ or ‘numpy’.")
-
-# def load_kddcup99(url,format="pandas", **kwargs):
-#     data = download_dataset(DATASETS["kddcup99"], format=format, compression='gzip', **kwargs)
-#     return data.to_numpy() if format == "numpy" else data
-
-# def load_spambase(format="pandas", **kwargs):
-#     return download_dataset(DATASETS["spambase"], format=format, header=None, **kwargs)
-
-# def load_shuttle(format="pandas", **kwargs):
-#     return download_dataset(DATASETS["shuttle"], format=format, delim_whitespace=True, **kwargs)
-
-
-# def load_dataset(name, format="pandas", **kwargs):
-#     """General function for loading static datasets."""
-#     loaders = {
-#         "kddcup99": load_kddcup99,
-#         "spambase": load_spambase,
-#         "shuttle": load_shuttle,
-       
-#     }
-
-#     if name in loaders:
-#         return loaders[name](format=format, **kwargs)
-#     else:
-#         raise ValueError(f"Dataset {name} not supported. Options: {list(loaders.keys())}")
