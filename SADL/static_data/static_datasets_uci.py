@@ -3,6 +3,7 @@ from io import BytesIO
 import requests
 import pandas as pd
 import zipfile
+import numpy as np
 
 """
 Datasets used in anomaly detection (Source: UCI Machine Learning Repository)
@@ -55,7 +56,7 @@ def load_from_id(id):
     print("Metadata:",dataset.metadata)
     # variable information 
     print("Variable information:", dataset.variables)
-    return X,y
+    return np.array(X),np.array(y)
 
 
 def load_from_url(url, **kwargs):
@@ -95,7 +96,7 @@ def load_human_activity_recognition(url,**kwargs):
     y_train = pd.read_csv("UCI_HAR/UCI HAR Dataset/train/y_train.txt",**kwargs)
     y_test = pd.read_csv("UCI_HAR/UCI HAR Dataset/test/y_test.txt", **kwargs)
     
-    return X_train,X_test,y_train,y_test
+    return np.array(X_train),np.array(X_test),np.array(y_train),np.array(y_test)
     
     
     
