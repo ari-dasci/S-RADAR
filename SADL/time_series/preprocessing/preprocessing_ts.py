@@ -1,6 +1,7 @@
 from SADL.base_preprocessing_module import BasePreprocessing
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, Normalizer,OneHotEncoder
 import numpy as np
+import pandas as pd
 
 class StandardScalerPreprocessing(BasePreprocessing):
     def __init__(self, **kwargs):
@@ -76,26 +77,8 @@ class NormalizerPreprocessing(BasePreprocessing):
     
     def inverse_transform(self, X):
         raise NotImplementedError("Normalizer does not support inverse transform")
-
-class OneHotEncoderPreprocessing(BasePreprocessing):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.encoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore', **kwargs)
     
-    def fit(self, X):
-        self.encoder.fit(X)
-        return self
-    
-    def transform(self, X):
-        return self.encoder.transform(X)
-    
-    def fit_transform(self, X):
-        return self.encoder.fit_transform(X)
-    
-    def inverse_transform(self, X):
-        return self.encoder.inverse_transform(X)
-    
-class RollingMeanProcessing(BasePreprocessing):
+class RollingMeanPreprocessing(BasePreprocessing):
     def __init__(self, window=3, **kwargs):
         super().__init__(window=window, **kwargs)
         self.window = window
@@ -120,7 +103,7 @@ class RollingMeanProcessing(BasePreprocessing):
     def inverse_transform(self, X):
         raise NotImplementedError("Rolling mean is not invertible")
 
-class InterpolationProcessing(BasePreprocessing):
+class InterpolationPreprocessing(BasePreprocessing):
     def __init__(self, method='linear', **kwargs):
         super().__init__(method=method, **kwargs)
         self.method = method
@@ -146,7 +129,7 @@ class InterpolationProcessing(BasePreprocessing):
         raise NotImplementedError("Interpolation is not invertible")
 
 
-class FilterProcessing(BasePreprocessing):
+class FilterPreprocessing(BasePreprocessing):
     def __init__(self, filter_func=np.mean, kernel_size=3, **kwargs):
         super().__init__(filter_func=filter_func, kernel_size=kernel_size, **kwargs)
         self.filter_func = filter_func
@@ -171,4 +154,39 @@ class FilterProcessing(BasePreprocessing):
     
     def inverse_transform(self, X):
         raise NotImplementedError("Filtering is not invertible")
-    
+
+class OneHotEncoderPreprocessing(BasePreprocessing):
+    def __init__(self, columns=None, **kwargs):
+        """
+        Parameters
+        ----------
+        columns : list, optional
+            List of column names to apply one-hot encoding.
+        """
+        super().__init__()
+        self.columns = columns
+        self.encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore", **kwargs)
+        self.feature_names = None
+
+    def fit(self, X):
+        X_selected = X[self.columns] if self.columns else X
+        self.encoder.fit(X_selected)
+        self.feature_names = self.encoder.get_feature_names_out(self.columns)
+        return self
+
+    def transform(self, X):
+        X_selected = X[self.columns] if self.columns else X
+        X_encoded = self.encoder.transform(X_selected)
+        X_encoded_df = pd.DataFrame(X_encoded, columns=self.feature_names, index=X.index)
+        X_remaining = X.drop(columns=self.columns, errors='ignore')
+        return X_remaining.join(X_encoded_df)
+
+    def fit_transform(self, X):
+        return self.fit(X).transform(X)
+
+    def inverse_transform(self, X):
+        X_encoded = X[self.feature_names]
+        X_decoded = self.encoder.inverse_transform(X_encoded)
+        X_decoded_df = pd.DataFrame(X_decoded, columns=self.columns, index=X.index)
+        X_remaining = X.drop(columns=self.feature_names, errors='ignore')
+        return X_remaining.join(X_decoded_df)    

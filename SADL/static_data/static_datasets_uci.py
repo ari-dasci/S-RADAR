@@ -98,15 +98,39 @@ def load_human_activity_recognition(url,**kwargs):
     
     return np.array(X_train),np.array(X_test),np.array(y_train),np.array(y_test)
     
+def load_kddcup99(data_url,names_url,**kwargs):
+    """Reads the KDD Cup 99 dataset and processes it."""
+
+    print("Downloading dataset...")
+    data = load_from_url(data_url, **kwargs)
     
+    print("Downloading names file...")
+    response = requests.get(names_url)
+    response.raise_for_status()
+    lines = response.text.splitlines()
+    
+    attack_types = lines[0].strip().split(',')
+    variable_names = [line.split(':')[0] for line in lines[1:]] + ["attack_type"]
+    data.columns = variable_names
+    
+    # Clean data
+    data["attack_type"] = data["attack_type"].str.replace('\.', '', regex=True)
+    
+        
+    attack_class = data.pop("attack_type").values
+    attack_types[-1] = attack_types[-1].strip()
+    
+    return data, attack_types, attack_class    
     
 
 datasets = {
     "shuttle": [load_from_id, {"id": 148}],
     "kddcup99": [
-        load_from_url,
+        load_kddcup99,
         {
-            "url": "http://kdd.ics.uci.edu/databases/kddcup99/kddcup.data.gz",
+            "data_url": "http://kdd.ics.uci.edu/databases/kddcup99/kddcup.data.gz",
+            "names_url":'http://kdd.ics.uci.edu/databases/kddcup99/kddcup.names',
+            "header":None,
             "compression": "gzip",
         },
     ],

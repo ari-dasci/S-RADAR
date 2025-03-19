@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def process_scores(d_scores, contamination):
     """
     Calculate binary labels based on a contamination threshold.
@@ -12,8 +13,11 @@ def process_scores(d_scores, contamination):
         np.ndarray: Binary labels (0 for normal, 1 for anomaly).
     """
     num_anomalies = int(contamination * len(d_scores))
-    threshold = np.partition(d_scores, -num_anomalies)[-num_anomalies]  # Efficient threshold selection
+    threshold = np.partition(d_scores, -num_anomalies)[
+        -num_anomalies
+    ]  # Efficient threshold selection
     return (d_scores >= threshold).astype(int)
+
 
 def process_scores_with_percentile(d_scores, contamination):
     """
@@ -28,6 +32,7 @@ def process_scores_with_percentile(d_scores, contamination):
     """
     return np.percentile(d_scores, 100 * (1 - contamination))
 
+
 def process_scores_with_threshold(d_scores):
     """
     Compute the threshold using mean and standard deviation.
@@ -41,15 +46,14 @@ def process_scores_with_threshold(d_scores):
     return np.mean(d_scores) + 2 * np.std(d_scores)
 
 
-
 def compute_anomaly_proportion(labels):
     """
     Calculates the proportion of anomalies in the data set.
-    
+
     Args:
     ----
     labels: Binary anomaly labels (0: normal, 1: anomalous).
-    
+
     Returns:
     -------
     proportion: Proportion of anomalies in the data.
@@ -66,7 +70,7 @@ def remove_low_confidence_anomalies(d_scores, anomalies, confidence_threshold=0.
     d_scores: List of decision scores.
     anomalies: Indices of detected anomalies.
     confidence_threshold: Confidence threshold (between 0 and 1).
-    
+
     Returns:
     -------
     filtered_anomalies: List of anomaly indexes with high confidence.
