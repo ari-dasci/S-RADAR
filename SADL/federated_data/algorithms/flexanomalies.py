@@ -104,7 +104,7 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
             },
         }
         self.set_params(**kwargs)
-    
+
     @classmethod
     def register_algorithm(cls, name, model_class):
         """Register a new algorithm in the class.
@@ -115,25 +115,27 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
             - An __init__ method that accepts model-specific parameters.
             - A fit(X, y) method to train the model.
             - A predict(X) method to make predictions.
-            - Optionally, a decision_function(X) for scoring anomalies.         
+            - Optionally, a decision_function(X) for scoring anomalies.
         """
         if name in flexanomalies_algorithms:
-            print(f" The algorithm {name} is already registered and will be overwritten.")
+            print(
+                f" The algorithm {name} is already registered and will be overwritten."
+            )
         flexanomalies_algorithms[name] = model_class
-            
+
     def register_federated_functions(self, name, functions):
         """Records the federated functions of a new algorithm.
-             - federated_functions (dict): A dictionary defining federated learning functions.
-         Required keys:
-            - "build_model": Function to initialize the server model.
-            - "copy": Function to distribute the model to clients.
-            - "train": Function to train the model on client data.
-            - "collect": Function to gather updates from clients.
-            - "aggregate": Function to combine client updates.
-            - "set_weights": Function to update the global model.          
+            - federated_functions (dict): A dictionary defining federated learning functions.
+        Required keys:
+           - "build_model": Function to initialize the server model.
+           - "copy": Function to distribute the model to clients.
+           - "train": Function to train the model on client data.
+           - "collect": Function to gather updates from clients.
+           - "aggregate": Function to combine client updates.
+           - "set_weights": Function to update the global model.
         """
         self.federated_functions[name] = functions
-    
+
     def fit(self, X, y):
         """Fit detector.
 
@@ -230,7 +232,7 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
     def evaluate(self, X_test, y_test, label_test=None):
         if self.model is None:
             raise ValueError("The model must be trained before evaluate.")
-        
+
         if label_test is not None and label_test.size > 0:
             return evaluate_global_model(self.model, X_test, y_test, label_test)
 
@@ -266,7 +268,7 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
 
         # Obtain valid model parameters
         valid_params = self.get_default_params(**model_params)
-        
+
         # Assign algorithm name
         setattr(self.algorithm_, "algorithm_", valid_params["algorithm_"])
 
@@ -286,7 +288,7 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
                 if param_name in model_params:
                     positional_params[param_name] = model_params[param_name]
         # Init Model
-        
+
         try:
             self.model = self.algorithm_(**positional_params)
         except Exception as e:
@@ -303,16 +305,15 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
 
         self.n_clients = self.federated_params["n_clients"]
         self.n_rounds = self.federated_params["n_rounds"]
-        
-        
-        #If flex data is an attribute, then we use the federated data set given as attribute
+
+        # If flex data is an attribute, then we use the federated data set given as attribute
         if hasattr(self, "flex_data") and self.flex_data is not None:
             print("Using external federated dataset.")
-            flex_dataset = self.flex_data  
+            flex_dataset = self.flex_data
         else:
             X, y = X_train, y_train
             flex_dataset = federate_data(self.n_clients, X, y)
-            
+
         federated_ops = self.federated_functions.get(self.algorithm_name)
         if not federated_ops:
             raise ValueError(
@@ -342,7 +343,6 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
         }
         model_params = {k: v for k, v in params.items() if k not in federated_params}
 
-        
         out = super().get_params()
 
         init_signature = signature(self.algorithm_.__init__)
@@ -357,9 +357,9 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
             for p in init_signature.parameters.values()
             if p.name in model_params
         }
-        
+
         # Use the existing model or instantiate a new one if necessary.
-        
+
         model_instance = self.model or self.algorithm_(**positional_params)
 
         # Obtain model parameters
