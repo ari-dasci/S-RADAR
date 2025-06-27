@@ -3,6 +3,17 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, No
 import numpy as np
 import pandas as pd
 
+preprocessing_ts_algorithms = {
+    "StandardScaler",
+    "MinMaxScaler",
+    "RobustScaler",
+    "Normalizer",
+    "RollingMean",
+    "Interpolation",
+    "Filter",
+    "OneHotEncoder" 
+}
+
 class StandardScalerPreprocessing(BasePreprocessing):
     def __init__(self, **kwargs):
         super().__init__()

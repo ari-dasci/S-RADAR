@@ -8,6 +8,14 @@ from sklearn.preprocessing import (
 )
 import pandas as pd
 
+preprocessing_static_algorithms = {
+    "StandardScaler",
+    "MinMaxScaler",
+    "RobustScaler",
+    "Normalizer",
+    "OneHotEncoder"
+}
+
 class StandardScalerPreprocessing(BasePreprocessing):
     def __init__(self, **kwargs):
         super().__init__()
