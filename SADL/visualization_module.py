@@ -103,7 +103,28 @@ class DataVisualization:
         plot_method = plot_methods.get(self.plot_technique)
 
         if plot_method:
-            plot_method()  # Call the corresponding plotting method
+            self.fig = plot_method()  # Save the generated Plotly Figure
+        else:
+            raise ValueError("Unrecognized plotting technique.")
+
+    def to_json(self):
+        """Returns the plot as a JSON string (for API usage)."""
+        plot_methods = {
+            "prediction_forecasting": self._plot_prediction_forecasting,
+            "anomaly_labels": self._plot_anomaly_labels,
+            "plot_anomaly": self._plot_anomaly,
+            "scatter": self._plot_scatter,
+            "line": self._plot_line,
+            "hist": self._plot_hist,
+            "boxplot": self._plot_boxplot,
+            "heatmap": self._plot_heatmap,
+        }
+
+        plot_method = plot_methods.get(self.plot_technique)
+
+        if plot_method:
+            fig = plot_method()
+            return fig.to_json()
         else:
             raise ValueError("Unrecognized plotting technique.")
 
@@ -150,6 +171,7 @@ class DataVisualization:
             height=500,
         )
         fig.show()
+        return fig
 
     def _plot_anomaly_labels(self):
         """
@@ -195,6 +217,7 @@ class DataVisualization:
             height=500,
         )
         fig.show()
+        return fig
 
     def _plot_anomaly(self):
         """
@@ -314,6 +337,7 @@ class DataVisualization:
             height=700,
         )
         fig.show()
+        return fig
 
     def _plot_scatter(self):
         """
@@ -342,6 +366,7 @@ class DataVisualization:
             **self.plot_kwargs
         )
         fig.show()
+        return fig
 
     def _plot_line(self):
         """
@@ -362,6 +387,7 @@ class DataVisualization:
             **self.plot_kwargs
         )
         fig.show()
+        return fig
 
     def _plot_hist(self):
         """
@@ -375,6 +401,7 @@ class DataVisualization:
             **self.plot_kwargs
         )
         fig.show()
+        return fig
 
     def _plot_boxplot(self):
         fig = px.box(
@@ -384,6 +411,7 @@ class DataVisualization:
             **self.plot_kwargs
         )
         fig.show()
+        return fig
 
     def _plot_heatmap(self):
         """
@@ -397,3 +425,4 @@ class DataVisualization:
             title="Data Heatmap", width=800, height=500, **self.plot_kwargs
         )
         fig.show()
+        return fig
