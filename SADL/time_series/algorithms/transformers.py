@@ -121,7 +121,6 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
         """Calculates anomaly scores (e.g., reconstruction error)."""
         self.model.eval()
 
-        # Convertir a tensor si es necesario
         if isinstance(X, np.ndarray):
             X = torch.tensor(X, dtype=torch.float32)
         elif isinstance(X, pd.DataFrame):
@@ -149,10 +148,11 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
         return torch.cat(scores, dim=0)
 
 
-    def default_label_parser(self, scores):
+    def score_to_label_fn(self, scores):
         threshold = np.mean(scores) + 3 * np.std(scores)
+        #np.percentile(scores, 95)
         return (scores > threshold).astype(int)
-    
+         
     
     def set_params(self, **params):
         """Set the parameters of this estimator.
@@ -286,57 +286,52 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
     
     
     
-def evaluate(self, X, y, threshold=None):
-    """
-    Evalúa el modelo en datos X, y con DataLoader interno.
-    Parámetros:
-      - X: array numpy, tensor o DataFrame con datos de entrada
-      - y: array numpy, tensor o DataFrame con etiquetas
-      - batch_size: tamaño del batch para DataLoader
-      - threshold: umbral para decidir anomalías; si None se estima automáticamente
-    
-    Retorna:
-      - Diccionario con métricas AUC, F1, Precision, Recall y Threshold usado
-    """
-    self.model.eval()
+    def evaluate(self, X, y=None, threshold=None):
+        """
+        Evaluates the model on data X (and optionally y).
+        If no threshold is provided, it is calculated as mean + 3 * std.
+        """
 
-    # Convertir X, y a tensores si es necesario
-    if isinstance(X, (np.ndarray, pd.DataFrame)):
-        X = torch.tensor(X.values if isinstance(X, pd.DataFrame) else X, dtype=torch.float32)
-    if isinstance(y, (np.ndarray, pd.DataFrame)):
-        y = torch.tensor(y.values if isinstance(y, pd.DataFrame) else y, dtype=torch.int64)
+        self.model.eval()
 
-    dataset = TensorDataset(X, y)
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+        if isinstance(X, (np.ndarray, pd.DataFrame)):
+            X = torch.tensor(X.values if isinstance(X, pd.DataFrame) else X, dtype=torch.float32)
+        if y is not None and isinstance(y, (np.ndarray, pd.DataFrame)):
+            y = torch.tensor(y.values if isinstance(y, pd.DataFrame) else y, dtype=torch.int64)
+            
+        dataset = TensorDataset(X) 
+        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
-    y_true = []
-    y_scores = []
+        y_true = []
+        y_scores = []
 
-    with torch.no_grad():
-        for inputs, labels in dataloader:
-            inputs = inputs.to(self.train_params["device"])
-            labels = labels.to(self.train_params["device"])
+        with torch.no_grad():
+            for batch in dataloader:
+                inputs = batch[0].to(self.device)
 
-            if hasattr(self, "label_parser") and self.label_parser:
-                labels = self.label_parser(labels)
+                decoder_inputs = torch.zeros_like(inputs)
+                decoder_inputs[:, 1:] = inputs[:, :-1]
+                decoder_inputs[:, 0] = 0  
+                
+                
+                outputs, *_ = self.model(inputs,decoder_inputs)
 
-            outputs, *_ = self.model(inputs)
-
-            # Score como error de reconstrucción (ajustar según modelo)
-            score = torch.mean((outputs - inputs) ** 2, dim=-1)
-
-            y_true.append(labels.detach().cpu())
-            y_scores.append(score.detach().cpu())
-
-    y_true = torch.cat(y_true).numpy().flatten()
-    y_scores = torch.cat(y_scores).numpy().flatten()
-
-    results = {}
-
-    if threshold is None:
-        threshold = torch.quantile(torch.tensor(y_scores[y_true == 0]), 0.95).item()
-
-    y_pred = (y_scores >= threshold).astype(int)
-
-    print_metrics(["Accuracy","F1","Recall","Precision"], y_true, y_pred)
-    return results
+            # MSE reconstruction error
+                score = torch.mean((outputs - inputs) ** 2, dim=-1)
+                y_scores.append(score.detach().cpu())
+                
+        
+        y_scores = torch.cat(y_scores).numpy().flatten()
+        y_pred = self.label_parser(y_scores) if hasattr(self, "label_parser") and self.label_parser else self.score_to_label_fn(y_scores)         
+                
+        results = {
+            "scores": y_scores,
+            "preds": y_pred,
+        }
+       
+        if y is not None:
+            y_true = y.flatten()
+            print_metrics(["Accuracy", "F1", "Recall", "Precision"], y_true, y_pred)
+            results["labels"] = y_true  
+            
+        return results
