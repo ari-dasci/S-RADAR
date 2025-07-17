@@ -292,7 +292,7 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
         try:
             self.model = self.algorithm_(**positional_params)
         except Exception as e:
-            print("Error al instanciar el modelo:", str(e))
+            print("Error instantiating the model:", str(e))
             raise
 
         # Assign the remaining parameters to the model
