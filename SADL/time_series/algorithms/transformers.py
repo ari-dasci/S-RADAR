@@ -1,5 +1,6 @@
 from SADL.base_algorithm_module import BaseAnomalyDetection
 from SADL.time_series.algorithms.modelsTransformersTS.vanillaTransformer.model import Transformer
+from SADL.time_series.algorithms.modelsTransformersTS.informer.model import Informer
 from inspect import signature
 import numpy as np
 import torch
@@ -11,7 +12,8 @@ from SADL.metrics_module import print_metrics
 
 
 transformers_algorithms = {
-    "Transformer": Transformer,  
+    "Transformer": Transformer, 
+    "Informer": Informer,
 }
 
 class TransformersAnomalyDetection(BaseAnomalyDetection):
@@ -28,8 +30,7 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
         self.train_epochs = self.train_params.get("train_epochs", 10)
         self.batch_size = self.train_params.get("batch_size", 32)
         self.label_parser = self.train_params.get("label_parser", None)
-
-        
+           
         self.optimizer = None
         self.criterion = None  
 
@@ -69,7 +70,7 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
 
                 inputs = inputs.to(self.device)
                 targets = targets.to(self.device)
-
+                
                 # Build decoder_input by shifting targets to the right
                 decoder_inputs = torch.zeros_like(targets)
                 decoder_inputs[:, 1:] = targets[:, :-1]
@@ -322,16 +323,16 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
                 
         
         y_scores = torch.cat(y_scores).numpy().flatten()
-        y_pred = self.label_parser(y_scores) if hasattr(self, "label_parser") and self.label_parser else self.score_to_label_fn(y_scores)         
-                
+        self.labels_preds = self.label_parser(y_scores) if hasattr(self, "label_parser") and self.label_parser else self.score_to_label_fn(y_scores)         
+             
         results = {
             "scores": y_scores,
-            "preds": y_pred,
+            "labels_preds": self.labels_preds,
         }
        
         if y is not None:
             y_true = y.flatten()
-            print_metrics(["Accuracy", "F1", "Recall", "Precision"], y_true, y_pred)
-            results["labels"] = y_true  
+            print_metrics(["Accuracy", "F1", "Recall", "Precision"], y_true, self.labels_preds)
+            results["labels_true"] = y_true  
             
         return results
