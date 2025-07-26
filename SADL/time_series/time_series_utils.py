@@ -103,16 +103,16 @@ class TSFEDL_TopModule(torch.nn.Module):
         self.npred = npred
         self.model = torch.nn.Sequential(
             torch.nn.Dropout(p=0.2),
-            torch.nn.Linear(in_features=in_features, out_features=50),
+            torch.nn.Linear(in_features=in_features, out_features=out_features),
             torch.nn.ReLU(),
-            torch.nn.Linear(in_features=50, out_features=npred*out_features)
+            torch.nn.Linear(in_features=out_features, out_features=npred*out_features)
         )
-
+        
     def forward(self, x):
         out = self.model(x)
-        if len(out.shape)>2:
+        if len(out.shape) > 2:
             out = out[:, -1, :]
         if self.npred > 1:
             # Reshape to (batch_size, npred, out_features)
             out = out.reshape(out.shape[0], self.npred, -1)
-        return out   
+        return out
