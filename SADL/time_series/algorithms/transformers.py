@@ -1,6 +1,7 @@
 from SADL.base_algorithm_module import BaseAnomalyDetection
 from SADL.time_series.algorithms.modelsTransformersTS.vanillaTransformer.model import Transformer
 from SADL.time_series.algorithms.modelsTransformersTS.informer.model import Informer
+from SADL.time_series.algorithms.modelsTransformersTS.autoformer.model import Autoformer
 from inspect import signature
 import numpy as np
 import torch
@@ -14,6 +15,7 @@ from SADL.metrics_module import print_metrics
 transformers_algorithms = {
     "Transformer": Transformer, 
     "Informer": Informer,
+    "Autoformer":Autoformer
 }
 
 class TransformersAnomalyDetection(BaseAnomalyDetection):
@@ -25,7 +27,7 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
         
         
         # Training parameters we get with set_params
-        self.device = self.train_params.get("device", "cpu")
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.lr = self.train_params.get("lr", 1e-3)
         self.train_epochs = self.train_params.get("train_epochs", 10)
         self.batch_size = self.train_params.get("batch_size", 32)
@@ -167,7 +169,7 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
         
         # Separate train parameters (do not belong to the model)
         self.train_params = {
-            k: v for k, v in params.items() if k in ["train_epochs", "batch_size", "lr", "device","label_parser"]
+            k: v for k, v in params.items() if k in ["train_epochs", "batch_size", "lr","label_parser"]
         }
 
         # Model parameters (all other)
@@ -223,7 +225,7 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
         """
           
         train_params = {
-            k: v for k, v in params.items() if k in ["train_epochs", "batch_size", "lr", "device","label_parser"]
+            k: v for k, v in params.items() if k in ["train_epochs", "batch_size", "lr","label_parser"]
         }
         model_params = {k: v for k, v in params.items() if k not in train_params}
 
