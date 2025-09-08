@@ -3,5 +3,5 @@ from . import preprocessing
 
 __all__ = ['algorithms', 'preprocessing']
 
-def get_components():
+def get_categories():
     return {'components': __all__}
