@@ -13,15 +13,15 @@ from SADL.metrics_module import print_metrics
 
 
 transformers_algorithms = {
-    "Transformer": Transformer, 
-    "Informer": Informer,
-    "Autoformer":Autoformer
+    "transformer": Transformer, 
+    "informer": Informer,
+    "autoformer":Autoformer
 }
 
 class TransformersAnomalyDetection(BaseAnomalyDetection):
     def __init__(self, **kwargs):
         self.model = None
-        self.algorithm_name = kwargs.get("algorithm_", "Transformer")
+        self.algorithm_name = kwargs.get("algorithm_", "transformer")
         self.algorithm_ = transformers_algorithms[self.algorithm_name]
         self.set_params(**kwargs)
         

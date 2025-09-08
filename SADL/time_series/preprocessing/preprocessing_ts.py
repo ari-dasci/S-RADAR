@@ -3,6 +3,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, No
 import numpy as np
 import pandas as pd
 
+
 class StandardScalerPreprocessing(BasePreprocessing):
     def __init__(self, **kwargs):
         super().__init__()
@@ -190,3 +191,15 @@ class OneHotEncoderPreprocessing(BasePreprocessing):
         X_decoded_df = pd.DataFrame(X_decoded, columns=self.columns, index=X.index)
         X_remaining = X.drop(columns=self.feature_names, errors='ignore')
         return X_remaining.join(X_decoded_df)    
+    
+
+preprocessing_ts_algorithms = {
+    "StandardScaler": StandardScalerPreprocessing,
+    "MinMaxScaler": MinMaxScalerPreprocessing,
+    "RobustScaler": RobustScalerPreprocessing,
+    "Normalizer": NormalizerPreprocessing,
+    "RollingMean": RollingMeanPreprocessing,
+    "Interpolation": InterpolationPreprocessing,
+    "Filter": FilterPreprocessing,
+    "OneHotEncoder": OneHotEncoderPreprocessing
+}
