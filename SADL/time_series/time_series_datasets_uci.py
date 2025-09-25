@@ -178,8 +178,7 @@ datasets = {
             "url": "https://archive.ics.uci.edu/static/public/502/online+retail+ii.zip",
             "filename": "online_retail_II.xlsx",
         },
-    ],    
-    "gas_sensor_array_drift_at_different_concentrations": [load_from_id, {"id": 270}],
+    ]
 }    
     
 

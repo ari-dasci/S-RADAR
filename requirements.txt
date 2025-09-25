@@ -182,7 +182,7 @@ tornado==6.4.2
 tqdm==4.67.1
 traitlets==5.14.3
 triton==3.2.0
-TSFEDL==1.0.7.6
+TSFEDL==1.0.7.7
 types-python-dateutil==2.9.0.20241206
 typing_extensions==4.12.2
 tzdata==2025.1
