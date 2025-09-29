@@ -426,3 +426,113 @@ class DataVisualization:
         )
         fig.show()
         return fig
+
+
+
+
+
+class DataVisualizationScoresTS:
+    """
+    Class for visualizing anomalies in temporal data from scores.
+    """
+
+    def __init__(self, scores):
+        """
+        Initializes the display with the scores.
+
+        Parameters
+        ----------
+        scores : array-like
+        List or array with the anomaly scores.
+        """
+        self.scores = np.array(scores)
+        self.x = np.arange(len(scores))
+
+    def to_json(self):
+        """Returns the plot as a JSON string (for API usage)."""
+        fig = self.visualize()
+        return fig.to_json()
+
+    def visualize(self, method="percentile", threshold=0.95, top_k=None) -> go.Figure:
+        """
+        Visualize anomalies from anomaly scores without ground-truth labels.
+
+        Parameters:
+        -----------
+        scores : array-like
+            List or array with anomaly scores.
+        method : str, optional
+            Method to determine the threshold. Options:
+            - "percentile" -> use the given percentile in 'threshold'
+            - "std" -> mean + threshold*std
+            - "topk" -> mark the 'top_k' highest scores
+        threshold : float, optional
+            Value used as percentile (0-1) or number of standard deviations.
+            E.g., 0.95 (95th percentile) or 3 (mean + 3*std).
+        top_k : int, optional
+            If method="topk", number of top anomalies to mark.
+        """
+
+        scores = self.scores
+        x = self.x
+
+        if method == "percentile":
+            threshold_value = np.quantile(scores, threshold)
+            anomalies = scores > threshold_value
+        elif method == "std":
+            threshold_value = np.mean(scores) + threshold * np.std(scores)
+            anomalies = scores > threshold_value
+        elif method == "topk" and top_k is not None:
+            idx_top = np.argsort(scores)[-top_k:]
+            anomalies = np.zeros_like(scores, dtype=bool)
+            anomalies[idx_top] = True
+            threshold_value = scores[idx_top].min()
+        else:
+            raise ValueError("Invalid method or missing 'top_k'.")
+
+        # Gráfico interactivo con Plotly
+        fig = go.Figure()
+
+        # Línea de scores
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=scores,
+                mode="lines+markers",
+                name="Scores",
+                line=dict(color="blue"),
+                marker=dict(size=6),
+            )
+        )
+
+        # Anomalías en rojo
+        fig.add_trace(
+            go.Scatter(
+                x=x[anomalies],
+                y=scores[anomalies],
+                mode="markers",
+                name="Anomalies",
+                marker=dict(color="red", size=10, symbol="circle"),
+            )
+        )
+
+        # Línea de umbral
+        fig.add_trace(
+            go.Scatter(
+                x=[x[0], x[-1]],
+                y=[threshold_value, threshold_value],
+                mode="lines",
+                name=f"Threshold ({method})",
+                line=dict(color="orange", dash="dash"),
+            )
+        )
+
+        fig.update_layout(
+            title="Anomaly Detection Based on Scores",
+            xaxis_title="Index",
+            yaxis_title="Anomaly Score",
+            template="plotly_white",
+            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
+        )
+
+        return fig
