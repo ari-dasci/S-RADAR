@@ -155,66 +155,62 @@ class TsfedlAnomalyDetection(BaseAnomalyDetection):
 
         return scores
 
-    # def predict(self, X,threshold=None):
-    #     """
-    #     Predict raw anomaly scores of X using the fitted detector.
-
-    #     The anomaly score of an input sample is computed based on the fitted
-    #     detector. For consistency, outliers are assigned with
-    #     higher anomaly scores.
-
-    #     If label_parser is an attribute, then we execute the particular predict function
-
-    #     Parameters
-    #     ----------
-    #     X : numpy array of shape (n_samples, n_features)
-    #         The input samples. Sparse matrices are accepted only
-    #         if they are supported by the base estimator.
-
-    #     Returns
-    #     -------
-    #     anomaly_scores : numpy array of shape (n_samples,)
-    #         The anomaly score of the input samples.
-    #     """
-    #     if "label_parser" in self.get_params().keys() and self.label_parser != None:
-    #         return self.label_parser(X)
-    #     else:
-    #         scores = self.decision_function(X)
-
-    #         if threshold is None:
-    #             # Umbral simple: media + 3*desviación estándar
-    #             threshold = np.mean(scores) + 3 * np.std(scores)
-
-    #         y_pred = (scores > threshold).astype(int)
-    #         return y_pred
-        
-    def predict(self, X):
+    def predict(self, X,threshold=None):
         """
-        Generate raw predictions from the trained model.
+        Predict anomaly labels (0 = normal, 1 = anomaly).
 
         Parameters
         ----------
-        X : numpy array or pandas DataFrame
+        X : array-like
             Input sequences.
+        threshold : float, optional
+            Threshold for classification. If None, uses mean + 3*std.
 
         Returns
         -------
-        y_pred : numpy array
-            Model predictions with squeezed dimensions.
+        y_pred : numpy array of shape (n_samples,)
+            Binary anomaly labels.
         """
-        if isinstance(X, (np.ndarray, pd.DataFrame)):
-            X = torch.tensor(X.values if isinstance(X, pd.DataFrame) else X, dtype=torch.float32)
+        if "label_parser" in self.get_params().keys() and self.label_parser != None:
+            return self.label_parser(X)
+        else:
+            scores = self.decision_function(X)
 
-        self.model.eval()
-        with torch.no_grad():
-            y_pred = self.model(X.to(self.device))
-            if isinstance(y_pred, torch.Tensor):
-                y_pred = y_pred.cpu().numpy()
+            if threshold is None:
+                # Umbral simple: media + 3*desviación estándar
+                threshold = np.mean(scores) + 3 * np.std(scores)
 
-        # Remove singleton dimensions: (9618, 1, 4) -> (9618, 4)
-        y_pred = np.squeeze(y_pred)
+            y_pred = (scores > threshold).astype(int)
+            return y_pred
+        
+        
+    # def predict(self, X):
+    #     """
+    #     Generate raw predictions from the trained model.
 
-        return y_pred
+    #     Parameters
+    #     ----------
+    #     X : numpy array or pandas DataFrame
+    #         Input sequences.
+
+    #     Returns
+    #     -------
+    #     y_pred : numpy array
+    #         Model predictions with squeezed dimensions.
+    #     """
+    #     if isinstance(X, (np.ndarray, pd.DataFrame)):
+    #         X = torch.tensor(X.values if isinstance(X, pd.DataFrame) else X, dtype=torch.float32)
+
+    #     self.model.eval()
+    #     with torch.no_grad():
+    #         y_pred = self.model(X.to(self.device))
+    #         if isinstance(y_pred, torch.Tensor):
+    #             y_pred = y_pred.cpu().numpy()
+
+    #     # Remove singleton dimensions: (9618, 1, 4) -> (9618, 4)
+    #     y_pred = np.squeeze(y_pred)
+
+    #     return y_pred
     
     def evaluate(self, X, y=None, threshold=None):
         """

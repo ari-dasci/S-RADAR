@@ -178,7 +178,7 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
         self.model = self.pool.servers._models[f"{self.algorithm_name}_server"]["model"]
         return self
 
-    def decision_function(self, X):
+    def decision_function(self, X, y=None):
         """Predict raw anomaly score of X using the fitted detector.
 
         Parameters
@@ -195,11 +195,14 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
         if self.model is None:
             raise ValueError("The model must be trained before using decision_function")
         try:
-            return self.model.decision_function(X)
+            if self.algorithm_name in ["deepCNN_LSTM", "DeepCNN_LSTM"]:
+                return self.model.decision_function(X,y)
+            else:    
+                return self.model.decision_function(X)
         except Exception as e:
             print(f"{self.algorithm_name}, decision_function():", str(e))
 
-    def predict(self, X):
+    def predict(self, X,y=None):
         """Predict raw anomaly scores of X using the fitted detector.
 
         The anomaly score of an input sample is computed based on the fitted
@@ -224,7 +227,10 @@ class FlexAnomalyDetection(BaseAnomalyDetection):
 
         else:
             try:
-                return self.model.predict(X)
+                if self.algorithm_name in ["deepCNN_LSTM", "DeepCNN_LSTM"]:
+                    return self.model.predict(X,y)
+                else:    
+                    return self.model.predict(X)
 
             except Exception as e:
                 print(f"{self.algorithm_name}, predict():", str(e))
