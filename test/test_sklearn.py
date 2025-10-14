@@ -6,7 +6,7 @@ from sklearn.utils.validation import check_X_y
 from sklearn.base import clone, is_classifier
 from sklearn.model_selection import train_test_split
 from scipy.io import loadmat
-from SADL.static_data.algorithms import sklearn
+from RADAR.static_data.algorithms import sklearn
 from pyod.utils.data import generate_data
 from pyod.utils.data import generate_data_clusters
 from numpy.testing import assert_equal

@@ -1,4 +1,4 @@
-from SADL.base_algorithm_module import BaseAnomalyDetection
+from RADAR.base_algorithm_module import BaseAnomalyDetection
 from flexanomalies.utils import AutoEncoder
 from flexanomalies.utils import IsolationForest
 from flexanomalies.utils import PCA_Anomaly

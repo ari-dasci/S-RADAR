@@ -1,7 +1,7 @@
-from SADL.base_algorithm_module import BaseAnomalyDetection
-from SADL.time_series.algorithms.modelsTransformersTS.vanillaTransformer.model import Transformer
-from SADL.time_series.algorithms.modelsTransformersTS.informer.model import Informer
-from SADL.time_series.algorithms.modelsTransformersTS.autoformer.model import Autoformer
+from RADAR.base_algorithm_module import BaseAnomalyDetection
+from RADAR.time_series.algorithms.modelsTransformersTS.vanillaTransformer.model import Transformer
+from RADAR.time_series.algorithms.modelsTransformersTS.informer.model import Informer
+from RADAR.time_series.algorithms.modelsTransformersTS.autoformer.model import Autoformer
 from inspect import signature
 import numpy as np
 import torch
@@ -9,7 +9,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 import pandas as pd
-from SADL.metrics_module import print_metrics
+from RADAR.metrics_module import print_metrics
 
 
 transformers_algorithms = {

@@ -1,4 +1,4 @@
-from SADL.base_preprocessing_module import BasePreprocessing
+from RADAR.base_preprocessing_module import BasePreprocessing
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, Normalizer,OneHotEncoder
 import numpy as np
 import pandas as pd

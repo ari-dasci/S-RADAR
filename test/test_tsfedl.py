@@ -1,9 +1,9 @@
 import os
 import unittest
 import torch
-from SADL.time_series.algorithms import tsfedl
-import SADL.time_series.time_series_datasets as dataset
-from SADL.time_series.time_series_utils import TimeSeriesDatasetV2
+from RADAR.time_series.algorithms import tsfedl
+import RADAR.time_series.time_series_datasets_uci as dataset
+from RADAR.time_series.time_series_utils import TimeSeriesDatasetV2
 import sklearn
 from numpy.testing import assert_equal
 import numpy as np

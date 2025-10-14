@@ -2,9 +2,9 @@ import numpy as np
 import unittest
 from pyod.utils.data import generate_data
 from numpy.testing import assert_equal
-from SADL.metrics_module import metric_AUC_ROC
-from SADL.federated_data.algorithms import flexanomalies
-from SADL.static_data.static_datasets_uci import global_load
+from RADAR.metrics_module import metric_AUC_ROC
+from RADAR.federated_data.algorithms import flexanomalies
+from RADAR.static_data.static_datasets_uci import global_load
 from sklearn.model_selection import train_test_split
 from pyod.utils.data import generate_data
 
