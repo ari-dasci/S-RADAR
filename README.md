@@ -1,7 +1,7 @@
-# Software Anomaly Detection Library (SADL)  
+# Robust Anomaly Detection And Recognition(RADAR)  
 
 ## 📌 Description  
-**Software Anomaly Detection Library (SADL)** is an **anomaly detection** platform designed to unify and integrate diverse approaches and libraries from the literature, along with innovative model variants. The goal is to provide a flexible and extensible framework that ranges from classical methods to advanced techniques based on Transformer architectures, also including support for Federated Learning in distributed scenarios.
+**Robust Anomaly Detection And Recognition(RADAR)** is an **anomaly detection** platform designed to unify and integrate diverse approaches and libraries from the literature, along with innovative model variants. The goal is to provide a flexible and extensible framework that ranges from classical methods to advanced techniques based on Transformer architectures, also including support for Federated Learning in distributed scenarios.
 
 Specifically, it includes:  
 - **Classical methods for static data:** integration with [PyOD](https://pyod.readthedocs.io/) and [Scikit-learn](https://scikit-learn.org/).  
@@ -30,7 +30,7 @@ Specifically, it includes:
 Software-Anomaly-Detection-Library/
 │── notebooks_test/              # Test notebooks and examples
 │
-│── SADL/                        # Core library
+│── RADAR/                        # Core library
 │   ├── federated_data/          # Methods and utilities for Federated Learning
 │   ├── static_data/             # Anomaly detection on static data
 │   ├── time_series/             # Methods for time series and deep learning
@@ -63,7 +63,7 @@ This setup allows users to explore the library’s functionality, apply the appr
 ## Installation
 Clone the repository:
 ```bash
-git clone https://github.com/ari-dasci/S-ADL.git
+git clone https://github.com/ari-dasci/RADAR.git
 ```
 
 Install the necessary dependencies:
