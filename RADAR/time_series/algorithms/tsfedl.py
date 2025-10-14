@@ -1,4 +1,4 @@
-from SADL.base_algorithm_module import BaseAnomalyDetection
+from RADAR.base_algorithm_module import BaseAnomalyDetection
 import pytorch_lightning as pl
 import numpy as np
 import traceback
@@ -31,7 +31,7 @@ from TSFEDL.models_pytorch import HongTan
 from TSFEDL.models_pytorch import SharPar
 from TSFEDL.models_pytorch import DaiXiLi
 from TSFEDL.models_pytorch import TSFEDL_BaseModule
-from SADL.metrics_module import print_metrics
+from RADAR.metrics_module import print_metrics
 import pandas as pd
 
 tsfedl_algorithms = {

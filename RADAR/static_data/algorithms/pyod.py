@@ -1,4 +1,4 @@
-from SADL.base_algorithm_module import BaseAnomalyDetection
+from RADAR.base_algorithm_module import BaseAnomalyDetection
 from pyod.models.cblof import CBLOF
 from pyod.models.abod import ABOD
 from pyod.models.alad import ALAD

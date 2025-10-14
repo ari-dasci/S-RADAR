@@ -3,7 +3,7 @@ from sklearn.linear_model import SGDOneClassSVM
 
 
 from inspect import signature
-from SADL.base_algorithm_module import BaseAnomalyDetection
+from RADAR.base_algorithm_module import BaseAnomalyDetection
 
 sklearn_algorithms = {
     "elliptic" : EllipticEnvelope,

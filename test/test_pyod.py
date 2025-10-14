@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.utils.validation import check_X_y
 from sklearn.model_selection import train_test_split
 from scipy.io import loadmat
-from SADL.static_data.algorithms import pyod
+from RADAR.static_data.algorithms import pyod
 from pyod.utils.data import generate_data
 from pyod.utils.data import generate_data_clusters
 from numpy.testing import assert_equal
