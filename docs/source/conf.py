@@ -13,8 +13,8 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 
 project = 'RADAR'
-copyright = '2025, Beatriz Bello Garcia'
-authors = ['Beatriz Bello García', 'Ignacio Aguilera Martos', 'Marina Hernández Bautista']
+copyright = '2025,DaSCI, Beatriz Bello Garcia, Ignacio Aguilera Martos, Nuria Rodriguez Barroso, Marina Hernández Bautista, Julian Luengo, Francisco Herrera'
+authors = ['Beatriz Bello García', 'Ignacio Aguilera Martos','Nuria Rodriguez Barroso', 'Marina Hernández Bautista','Julian Luengo','Francisco Herrera']
 author = ', '.join(authors)
 release = '0.1.0'
 

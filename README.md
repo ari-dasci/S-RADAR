@@ -1,7 +1,7 @@
 # Robust Anomaly Detection And Recognition(RADAR)  
 
 ## 📌 Description  
-**Robust Anomaly Detection And Recognition(RADAR)** is an **anomaly detection** platform designed to unify and integrate diverse approaches and libraries from the literature, along with innovative model variants. The goal is to provide a flexible and extensible framework that ranges from classical methods to advanced techniques based on Transformer architectures, also including support for Federated Learning in distributed scenarios.
+**Robust Anomaly Detection And Recognition(RADAR)** is an **anomaly detection** platform designed to unify and integrate diverse approaches and libraries from the literature, along with innovative model variants. The goal is to provide a flexible and extensible framework that ranges from classical methods to advanced techniques based on Transformer architectures, also including support for Federated Learning in distributed scenarios.For more details, refer to the official documentation [here]().
 
 Specifically, it includes:  
 - **Classical methods for static data:** integration with [PyOD](https://pyod.readthedocs.io/) and [Scikit-learn](https://scikit-learn.org/).  
@@ -27,7 +27,7 @@ Specifically, it includes:
 ## 📂 Repository Structure  
 
 ```bash
-Software-Anomaly-Detection-Library/
+RADAR/
 │── notebooks_test/              # Test notebooks and examples
 │
 │── RADAR/                        # Core library

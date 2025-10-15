@@ -1,4 +1,4 @@
-RADAR.static\_data package
+RADAR.static\_data 
 ==========================
 
 Subpackages

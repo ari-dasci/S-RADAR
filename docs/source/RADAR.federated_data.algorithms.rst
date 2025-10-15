@@ -1,4 +1,4 @@
-RADAR.federated\_data.algorithms package
+RADAR.federated\_data.algorithms
 ========================================
 
 Submodules

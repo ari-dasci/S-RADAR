@@ -1,4 +1,4 @@
-RADAR.time\_series.preprocessing package
+RADAR.time\_series.preprocessing 
 ========================================
 
 Submodules

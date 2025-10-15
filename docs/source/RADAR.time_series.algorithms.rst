@@ -1,4 +1,4 @@
-RADAR.time\_series.algorithms package
+RADAR.time\_series.algorithms 
 =====================================
 
 Subpackages

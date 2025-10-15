@@ -1,4 +1,4 @@
-RADAR.static\_data.algorithms package
+RADAR.static\_data.algorithms
 =====================================
 
 Submodules
