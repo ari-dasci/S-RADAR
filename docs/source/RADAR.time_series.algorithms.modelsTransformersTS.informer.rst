@@ -1,4 +1,4 @@
-RADAR.time\_series.algorithms.modelsTransformersTS.informer package
+RADAR.time\_series.algorithms.modelsTransformersTS.informer 
 ===================================================================
 
 Submodules

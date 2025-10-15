@@ -1,4 +1,4 @@
-RADAR package
+RADAR
 =============
 
 Subpackages

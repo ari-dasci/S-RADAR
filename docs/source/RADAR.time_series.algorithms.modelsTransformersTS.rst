@@ -1,4 +1,4 @@
-RADAR.time\_series.algorithms.modelsTransformersTS package
+RADAR.time\_series.algorithms.modelsTransformersTS 
 ==========================================================
 
 Subpackages

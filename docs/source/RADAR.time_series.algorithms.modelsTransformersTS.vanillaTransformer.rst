@@ -1,4 +1,4 @@
-RADAR.time\_series.algorithms.modelsTransformersTS.vanillaTransformer package
+RADAR.time\_series.algorithms.modelsTransformersTS.vanillaTransformer 
 =============================================================================
 
 Submodules
