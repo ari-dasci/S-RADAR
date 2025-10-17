@@ -21,7 +21,25 @@ class SkLearnAnomalyDetection(BaseAnomalyDetection):
 
         self.model = None
         self.set_params(**kwargs)
-
+        
+    @classmethod
+    def register_algorithm(cls, name, model_class):
+        """Register a new algorithm in the class.
+        Parameters:
+          - name (str): The name of the new algorithm.
+          - model_class (class): The class implementing the anomaly detection model.
+        The class should have:
+            - An __init__ method that accepts model-specific parameters.
+            - A fit(X, y) method to train the model.
+            - A predict(X) method to make predictions.
+            - Optionally, a decision_function(X) for scoring anomalies.
+        """
+        if name in sklearn_algorithms:
+            print(
+                f" The algorithm {name} is already registered and will be overwritten."
+            )
+        sklearn_algorithms[name]  = model_class
+        print(f"Algorithm {name} registered successfully.")
     
     def fit(self, X, y=None):
         """Fit detector. y is ignored in unsupervised methods.

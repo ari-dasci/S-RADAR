@@ -36,7 +36,25 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
         self.optimizer = None
         self.criterion = None  
 
-    
+    @classmethod
+    def register_algorithm(cls, name, model_class):
+        """Register a new algorithm in the class.
+        Parameters:
+          - name (str): The name of the new algorithm.
+          - model_class (class): The class implementing the anomaly detection model.
+        The class should have:
+            - An __init__ method that accepts model-specific parameters.
+            - A fit(X, y) method to train the model.
+            - A predict(X) method to make predictions.
+            - Optionally, a decision_function(X) for scoring anomalies.
+        """
+        if name in transformers_algorithms:
+            print(
+                f" The algorithm {name} is already registered and will be overwritten."
+            )
+        transformers_algorithms[name]  = model_class
+        print(f"Algorithm {name} registered successfully.")
+        
     def fit(self, X, y=None):
         """Train Transformer model. `X` is the input sequence. If `y` is provided, it is used as target"""
         self.model.to(self.device)
