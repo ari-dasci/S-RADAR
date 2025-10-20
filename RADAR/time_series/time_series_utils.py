@@ -97,22 +97,3 @@ class TimeSeriesDatasetV2(torch.utils.data.Dataset):
         return (self.data[i:i+self.window_size].permute(self.permute_size), self.data[i+self.window_size:i+self.window_size+self.forecast_size])
     
 
-class TSFEDL_TopModule(torch.nn.Module):
-    def __init__(self, in_features=103, out_features=103, npred=1):
-        super(TSFEDL_TopModule, self).__init__()
-        self.npred = npred
-        self.model = torch.nn.Sequential(
-            torch.nn.Dropout(p=0.2),
-            torch.nn.Linear(in_features=in_features, out_features=out_features),
-            torch.nn.ReLU(),
-            torch.nn.Linear(in_features=out_features, out_features=npred*out_features)
-        )
-        
-    def forward(self, x):
-        out = self.model(x)
-        if len(out.shape) > 2:
-            out = out[:, -1, :]
-        if self.npred > 1:
-            # Reshape to (batch_size, npred, out_features)
-            out = out.reshape(out.shape[0], self.npred, -1)
-        return out

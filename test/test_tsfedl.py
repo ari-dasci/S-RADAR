@@ -1,339 +1,323 @@
-import os
+
 import unittest
 import torch
 from RADAR.time_series.algorithms import tsfedl
-import RADAR.time_series.time_series_datasets_uci as dataset
-from RADAR.time_series.time_series_utils import TimeSeriesDatasetV2
-import sklearn
-from numpy.testing import assert_equal
+from RADAR.time_series.time_series_utils import TimeSeriesProcessor
 import numpy as np
-import pickle as pkl
+from TSFEDL.models_pytorch import (
+    OhShuLih_Forecaster, YiboGao_Forecaster, LihOhShu_Forecaster, YaoQihang_Forecaster,
+    HtetMyetLynn_Forecaster, YildirimOzal_Forecaster, CaiWenjuan_Forecaster, ZhangJin_Forecaster,
+    KongZhengmin_Forecaster, WeiXiaoyan_Forecaster, GaoJunLi_Forecaster, KhanZulfiqar_Forecaster,
+    ZhengZhenyu_Forecaster, WangKejun_Forecaster, ChenChen_Forecaster, KimTaeYoung_Forecaster,
+    GenMinxing_Forecaster, FuJiangmeng_Forecaster, ShiHaotian_Forecaster, HuangMeiLing_Forecaster,
+    HongTan_Forecaster, SharPar_Forecaster, DaiXiLi_Forecaster
+)
 
-class TSFEDL_TopModule(torch.nn.Module):
-    def __init__(self, in_features=103, out_features=103, npred=1):
-        super(TSFEDL_TopModule, self).__init__()
-        self.npred = npred
-        self.model = torch.nn.Sequential(
-            torch.nn.Dropout(p=0.2),
-            torch.nn.Linear(in_features=in_features, out_features=50),
-            torch.nn.ReLU(),
-            torch.nn.Linear(in_features=50, out_features=npred*out_features)
-        )
 
-    def forward(self, x):
-        out = self.model(x)
-        if len(out.shape)>2:
-            out = out[:, -1, :]
-        if self.npred > 1:
-            # Reshape to (batch_size, npred, out_features)
-            out = out.reshape(out.shape[0], self.npred, -1)
-        return out   
+def generate_data(n_train=4000, n_test=1000, n_features=5, contamination=0.1, random_state=42):
+    """
+    Generates synthetic data for anomaly detection testing.
+    
+    Return:
+        X_train: (n_train, n_features)
+        X_test:  (n_test, n_features)
+        y_train: (n_train,)
+        y_test:  (n_test,)
+    """
+    rng = np.random.RandomState(random_state)
+    
+    # Datos normales
+    X_train = rng.normal(0, 1, (n_train, n_features))
+    X_test = rng.normal(0, 1, (n_test, n_features))
+    
+    # Etiquetas (0 = normal)
+    y_train = np.zeros(n_train, dtype=int)
+    y_test = np.zeros(n_test, dtype=int)
+    
+    # Introducir anomalías en el conjunto de test
+    n_anom_train = int(contamination * n_train)
+    n_anom_test = int(contamination * n_test)
+    
+    idx_train = rng.choice(n_train, n_anom_train, replace=False)
+    idx_test = rng.choice(n_test, n_anom_test, replace=False)
+    
+    # Añadir desviación a las anomalías
+    X_train[idx_train] += rng.normal(5, 1, (n_anom_train, n_features))
+    X_test[idx_test] += rng.normal(5, 1, (n_anom_test, n_features))
+    
+    # Etiquetas de anomalías
+    y_train[idx_train] = 1
+    y_test[idx_test] = 1
+    
+    return X_train, X_test, y_train, y_test
 
-class MyTestCase(unittest.TestCase):
+class TestTsfedl(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.batch_size = 32
-        self.data_size = round(10000 / self.batch_size)
-
-        if not os.path.exists(os.path.join(os.getcwd(),'test.pkl')):
-            data, attack_types, classes = dataset.readKDDCup99Dataset()
-            self.data = sklearn.preprocessing.StandardScaler().fit_transform(data)
-
-            attack_types_dict = {}
-            cont=0
-            for att in attack_types:
-                attack_types_dict[att]=cont
-                cont+=1
-
-            for i in range(len(classes)):
-                classes[i] = attack_types_dict[classes[i]]
-
-            classes[classes!=attack_types_dict["normal"]] = 1
-            classes[classes==attack_types_dict["normal"]] = 0
-            classes_test = classes[-500000:]
-
-            self.normal_train = np.where(classes[:-500000]==0)[0][:10000]
-            self.train_data = data[self.normal_train]
-
-            with open('test.pkl','wb') as f:
-                pkl.dump(self.train_data, f)
-        else: 
-            with open('test.pkl','rb') as f:
-                self.train_data = pkl.load(f)
+        self.n_train = 10000
+        self.n_test = 000
+        self.contamination = 0.1
+        self.n_features = 5
+        self.w_size = 1048
+        self.n_pred = 1
+        
+        
+        self.X_train, self.X_test, self.y_train, self.y_test = generate_data(
+            n_train=self.n_train, n_test=self.n_test, n_features= self.n_features,
+            contamination=self.contamination, random_state=42
+        )
+        
+        processor = TimeSeriesProcessor(window_size= self.w_size, step_size=1, future_prediction=False)
+        X_train_windows, y_train_windows, self.X_test_windows, self.y_test_windows = processor.process_train_test(self.X_train, self.y_train, self.X_test, self.y_test)
+        
+        print("X_train shape:", X_train_windows.shape)
+        print("y_train shape:", y_train_windows.shape)
+        print("X_test shape:", self.X_test_windows.shape)
+        print("y_test shape:", self.y_test_windows.shape)
+        
+        self.X_train_windows = torch.tensor(X_train_windows, dtype=torch.float32)
+        self.y_train_windows = (torch.tensor(y_train_windows, dtype=torch.float32)).unsqueeze(-1)  # to (7977, 24, 1)
+        
         
     
     def test_OhShuLi(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=4, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "ohshulih", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=20, out_features=126), "max_epochs": 1, "in_features":126}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
+        top_module = OhShuLih_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "ohshulih", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
     
     
     def test_LiOhShu(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "liohshu", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=10, out_features=126), "max_epochs": 1, "in_features":126}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
+        top_module = LihOhShu_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        
+        kwargs = {"algorithm_": "liohshu", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
 
     
     def test_YiBoGao(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
+        top_module = YiboGao_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        
+        kwargs = {"algorithm_": "yibogao", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
 
-        kwargs = {"algorithm_": "yibogao", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=1, out_features=126), "max_epochs": 1, "in_features":126}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
    
     
     
     def test_YaoQihang(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
+        top_module = YaoQihang_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        
+        kwargs = {"algorithm_": "yaoqihang",  "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
 
-        kwargs = {"algorithm_": "yaoqihang", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=32, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
 
     
     def test_HtetMyetLynn(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "htetmyetlynn", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=80, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
+        top_module = HtetMyetLynn_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "htetmyetlynn",  "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
 
     def test_YildirimOzal(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=126, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "yildirimozal", "input_shape":(126,126), "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=32, out_features=126), "max_epochs": 1, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
+        top_module = YildirimOzal_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "yildirimozal", "input_shape":(126,126), "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+ 
    
     
     def test_CaiWenjuan(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
+        top_module = CaiWenjuan_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "caiwenjuan", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
 
-        kwargs = {"algorithm_": "caiwenjuan", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=67, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
 
     
     def test_ZhangJin(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "zhangjin", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=24, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
+        top_module = ZhangJin_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "zhangjin", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
 
     
     def test_KongZhengmin(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "kongzhengmin", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=64, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
-    
+        top_module = KongZhengmin_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "kongzhengmin", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
+       
     def test_WeiXiaoyan(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "weixiaoyan", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=512, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
+        top_module = WeiXiaoyan_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "weixiaoyan", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
     
     def test_GaoJunLi(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "gaojunli", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=64, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
+        top_module = GaoJunLi_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "gaojunli", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
     
     def test_KhanZulfiqar(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "khanzulfiqar", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=10, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
+        top_module = KhanZulfiqar_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "khanzulfiqar", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
     
     def test_ZhengZhenyu(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "zhengzhenyu", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=256, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
+        top_module = ZhengZhenyu_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "zhengzhenyu", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
 
     
     def test_WangKejun(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "wangkejun", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=256, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
+        top_module = WangKejun_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "wangkejun", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
     
     def test_ChenChen(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=1000, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
+        top_module = ChenChen_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "chenchen", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+      
 
-        kwargs = {"algorithm_": "chenchen", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=64, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
-    
     def test_KimTaeYoung(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=1000, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "kimtaeyoung", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=64, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
+        top_module = KimTaeYoung_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "kimtaeyoung", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
 
     def test_GenMinxing(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=1000, forecast_size=1, permute_size = (0,1))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "genminxing", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=80, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
-    
+        top_module = GenMinxing_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "genminxing", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
+          
     def test_FuJiangmeng(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "fujiangmeng", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=256, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
+        top_module = FuJiangmeng_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "fujiangmeng", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
+        
     
     def test_ShiHaotian(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "shihaotian", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=32, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
+        
+        top_module = ShiHaotian_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "shihaotian", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
+        
     
     def test_HuangMeiLing(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=252, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "huangmeiling", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=19, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-    
+        top_module = HuangMeiLing_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "huangmeiling", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+        
+        
     
     
     def test_SharPar(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "sharpar", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=16, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
+        top_module = SharPar_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "sharpar", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+       
+       
     def test_HongTan(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=400, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
-        kwargs = {"algorithm_": "hongtan", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=4, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
-
-    
-    def test_DaiXiLi(self):
-        train_dataset = TimeSeriesDatasetV2(torch.from_numpy(self.train_data).double(), window_size=1000, forecast_size=1, permute_size = (1,0))
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size = 32, shuffle = True)
-
+        top_module = HongTan_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "hongtan", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
         
-        kwargs = {"algorithm_": "daixili", "loss": torch.nn.MSELoss(),"top_module": TSFEDL_TopModule(in_features=2048, out_features=126), "max_epochs": 1, "in_features":126, "label_parser": True}
-        model1 = tsfedl.TsfedlAnomalyDetection(**kwargs)
-        model1.model = model1.model.double()
-
-        model1.fit(train_loader)
-        scores = model1.decision_function(train_loader)
+        
+    def test_DaiXiLi(self):
+        top_module = DaiXiLi_Forecaster(out_features=self.n_features,n_pred=self.n_pred)
+        print("TopModule_in_features:",top_module.in_features)
+        kwargs = {"algorithm_": "daixili", "loss": torch.nn.MSELoss(),"top_module": top_module, "max_epochs": 2, "in_features":self.w_size}
+        model = tsfedl.TsfedlAnomalyDetection(**kwargs)
+        model.fit(self.X_train_windows,self.y_train_windows)
+        scores_pred = model.decision_function(self.X_test_windows)
+  
+    
+if __name__ == '__main__':
+    unittest.main()    
