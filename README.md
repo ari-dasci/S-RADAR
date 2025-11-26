@@ -1,4 +1,5 @@
 <img src="logoRADAR.png" width="100">
+
 # Robust Anomaly Detection And Recognition (RADAR)  
 
 ## 📌 Description  
