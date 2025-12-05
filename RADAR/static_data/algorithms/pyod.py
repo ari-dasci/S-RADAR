@@ -1,4 +1,5 @@
 from RADAR.base_algorithm_module import BaseAnomalyDetection
+from RADAR.metrics_module import print_metrics
 from pyod.models.cblof import CBLOF
 from pyod.models.abod import ABOD
 from pyod.models.alad import ALAD
@@ -16,6 +17,7 @@ from pyod.models.inne import INNE
 from pyod.models.gmm import GMM
 from pyod.models.kde import KDE
 from pyod.models.lmdd import LMDD
+import numpy as np
 
 from inspect import signature
 
@@ -140,7 +142,63 @@ class PyodAnomalyDetection(BaseAnomalyDetection):
             except Exception as e:
                 print("PYODerror predict():", str(e))
                 print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
+    
+    def evaluate(self, X, y=None):
+        """
+        Evaluates the model on data X (and optionally y).
+        Uses decision_function to get anomaly scores and predict to get labels.
+        If y is provided, prints metrics using print_metrics.
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The input samples.
+        y : numpy array of shape (n_samples,), optional
+            Ground truth labels (0 for normal, 1 for anomaly).
+
+        Returns
+        -------
+        results : dict
+            Dictionary containing:
+            - 'scores': anomaly scores from decision_function
+            - 'labels_preds': predicted labels (0 for normal, 1 for anomaly)
+            - 'labels_true': ground truth labels (if y is provided)
+        """
+        try:
+            # Get anomaly scores
+            y_scores = self.decision_function(X)
             
+            # Get predicted labels
+            if "label_parser" in self.get_params().keys() and self.label_parser is not None:
+                self.labels_preds = self.label_parser(y_scores)
+            else:
+                self.labels_preds = self.predict(X)
+            
+            # Ensure labels_preds is a numpy array
+            if not isinstance(self.labels_preds, np.ndarray):
+                self.labels_preds = np.array(self.labels_preds)
+            
+            # Ensure y_scores is a numpy array
+            if not isinstance(y_scores, np.ndarray):
+                y_scores = np.array(y_scores)
+            
+            results = {
+                "scores": y_scores,
+                "labels_preds": self.labels_preds,
+            }
+            
+            # If ground truth is provided, calculate and print metrics
+            if y is not None:
+                y_true = np.array(y).flatten()
+                print_metrics(["Accuracy", "F1", "Recall", "Precision"], y_true, self.labels_preds)
+                results["labels_true"] = y_true
+            
+            return results
+            
+        except Exception as e:
+            print("PYODerror evaluate():", str(e))
+            print("For further reference please see: https://pyod.readthedocs.io/en/latest/")
+            raise
 
     def set_params(self, **params): #Este setea sus propios parametros
         """Set the parameters of this estimator.
