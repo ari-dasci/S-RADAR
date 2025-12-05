@@ -4,6 +4,8 @@ from sklearn.linear_model import SGDOneClassSVM
 
 from inspect import signature
 from RADAR.base_algorithm_module import BaseAnomalyDetection
+from RADAR.metrics_module import print_metrics
+import numpy as np
 
 sklearn_algorithms = {
     "elliptic" : EllipticEnvelope,
@@ -106,7 +108,76 @@ class SkLearnAnomalyDetection(BaseAnomalyDetection):
             except Exception as e:
                 print("SkLearnError predict():", str(e))
                 print("For further reference please see: https://scikit-learn.org/stable/modules/classes.html")
-          
+    
+    def evaluate(self, X, y=None):
+        """
+        Evaluates the model on data X (and optionally y).
+        Uses decision_function to get anomaly scores and predict to get labels.
+        Note: sklearn uses -1 for outliers and +1 for inliers, which are converted to 0/1 for metrics.
+        If y is provided, prints metrics using print_metrics.
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+            The input samples.
+        y : numpy array of shape (n_samples,), optional
+            Ground truth labels (0 for normal, 1 for anomaly).
+            Note: If y uses -1/+1 format, it will be converted to 0/1 automatically.
+
+        Returns
+        -------
+        results : dict
+            Dictionary containing:
+            - 'scores': anomaly scores from decision_function
+            - 'labels_preds': predicted labels (0 for normal, 1 for anomaly)
+            - 'labels_true': ground truth labels 
+        """
+        try:
+            # Get anomaly scores
+            y_scores = self.decision_function(X)
+            
+            # Get predicted labels (sklearn returns -1 for outliers, +1 for inliers)
+            if "label_parser" in self.get_params().keys() and self.label_parser is not None:
+                labels_preds_sklearn = self.label_parser(y_scores)
+            else:
+                labels_preds_sklearn = self.predict(X)
+            
+            # Convert sklearn format (-1/+1) to binary format (0/1) for metrics
+            # -1 (outlier) -> 1 (anomaly), +1 (inlier) -> 0 (normal)
+            if not isinstance(labels_preds_sklearn, np.ndarray):
+                labels_preds_sklearn = np.array(labels_preds_sklearn)
+            
+            # Convert from sklearn format (-1/+1) to binary (0/1)
+            self.labels_preds = (labels_preds_sklearn == -1).astype(int)
+            
+            # Ensure y_scores is a numpy array
+            if not isinstance(y_scores, np.ndarray):
+                y_scores = np.array(y_scores)
+            
+            results = {
+                "scores": y_scores,
+                "labels_preds": self.labels_preds,
+            }
+            
+            # If ground truth is provided, calculate and print metrics
+            if y is not None:
+                y_true = np.array(y).flatten()
+                # Convert y_true from sklearn format (-1/+1) to binary (0/1) only if needed
+                # Most datasets provide ground truth in binary format (0/1), but handle sklearn format if present
+                unique_vals = np.unique(y_true)
+                if len(unique_vals) == 2 and np.all(np.isin(unique_vals, [-1, 1])):
+                    # Only convert if ALL values are exactly -1 and +1 (sklearn format)
+                    y_true = (y_true == -1).astype(int)
+                
+                print_metrics(["Accuracy", "F1", "Recall", "Precision"], y_true, self.labels_preds)
+                results["labels_true"] = y_true
+            
+            return results
+            
+        except Exception as e:
+            print("SkLearnError evaluate():", str(e))
+            print("For further reference please see: https://scikit-learn.org/stable/modules/classes.html")
+            raise
 
     def get_default_params(self, **params): #Get default params based on the positional params already given
         """Get DEFAULT parameters for this estimator, params is used to configure positional parameters in order to
