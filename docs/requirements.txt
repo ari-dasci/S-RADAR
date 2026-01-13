@@ -2,7 +2,6 @@ sphinx
 sphinx-rtd-theme
 myst-parser
 # Para docstrings estilo Google o NumPy
-sphinx.ext.napoleon
 # Opcional: si quieres ver enlaces al código fuente
 sphinx.ext.viewcode
 # numpy==2.0.2
