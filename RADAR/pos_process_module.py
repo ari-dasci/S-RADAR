@@ -51,11 +51,11 @@ def compute_anomaly_proportion(labels):
     Calculates the proportion of anomalies in the data set.
 
     Args:
-    ----
+    -----
     labels: Binary anomaly labels (0: normal, 1: anomalous).
 
     Returns:
-    -------
+    --------
     proportion: Proportion of anomalies in the data.
     """
     proportion = np.sum(labels) / len(labels)
@@ -66,13 +66,13 @@ def remove_low_confidence_anomalies(d_scores, anomalies, confidence_threshold=0.
     """
     Removes anomalies with a decision score below a confidence threshold.
     Args:
-    ----
+    -----
     d_scores: List of decision scores.
     anomalies: Indices of detected anomalies.
     confidence_threshold: Confidence threshold (between 0 and 1).
 
     Returns:
-    -------
+    --------
     filtered_anomalies: List of anomaly indexes with high confidence.
     """
     filtered_anomalies = [i for i in anomalies if d_scores[i] >= confidence_threshold]
