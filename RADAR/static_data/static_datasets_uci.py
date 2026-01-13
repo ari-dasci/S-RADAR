@@ -42,12 +42,12 @@ def load_from_id(id):
     Fetches a dataset from the UCI repository using its ID.
 
     Parameters:
-    id (int): The identifier of the dataset in the UCI repository.
+        id (int): The identifier of the dataset in the UCI repository.
 
     Returns:
-    tuple: A tuple containing:
-        - X (pd.DataFrame): The feature matrix.
-        - y (pd.Series or np.array): The target variable.
+        tuple: A tuple containing:
+            - X (pd.DataFrame): The feature matrix.
+            - y (pd.Series or np.array): The target variable.
     """
     dataset = fetch_ucirepo(id=id)
     X = dataset.data.features
@@ -64,11 +64,11 @@ def load_from_url(url, **kwargs):
     Loads a dataset from a given URL.
 
     Parameters:
-    url (str): The URL from which to fetch the dataset.
-    **kwargs: Additional arguments to be passed to `pd.read_csv()`.
+        url (str): The URL from which to fetch the dataset.
+        **kwargs: Additional arguments to be passed to `pd.read_csv()`.
 
     Returns:
-    pd.DataFrame: The dataset loaded from the URL.
+        pd.DataFrame: The dataset loaded from the URL.
     """
     
     data = requests.get(url).content

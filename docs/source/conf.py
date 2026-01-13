@@ -8,34 +8,52 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))  
+
+sys.path.insert(0, os.path.abspath("../.."))
 
 
-
-project = 'RADAR'
-copyright = '2025,DaSCI, Beatriz Bello Garcia, Ignacio Aguilera Martos'
-authors = ['Beatriz Bello García', 'Ignacio Aguilera Martos']
-author = ', '.join(authors)
-release = '0.1.0'
+project = "RADAR"
+copyright = "2025,DaSCI, Beatriz Bello Garcia, Ignacio Aguilera Martos"
+authors = ["Beatriz Bello García", "Ignacio Aguilera Martos"]
+author = ", ".join(authors)
+release = "0.1.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-              'sphinx.ext.autodoc',        # Documentación desde docstrings
-              'sphinx.ext.napoleon',       # Estilo Google o NumPy en docstrings
-              'sphinx.ext.viewcode',       # Añade enlaces al código fuente
-              'myst_parser',               # Permite Markdown
-             ]
+    "sphinx.ext.autodoc",  # Documentación desde docstrings
+    "sphinx.ext.napoleon",  # Estilo Google o NumPy en docstrings
+    "sphinx.ext.viewcode",  # Añade enlaces al código fuente
+    "myst_parser",  # Permite Markdown
+]
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
-
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-#html_theme = 'alabaster'
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+# html_theme = 'alabaster'
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+# Mock imports
+autodoc_mock_imports = [
+    "numpy",
+    "pandas",
+    "sklearn",
+    "pyod",
+    "torch",
+    "pytorch_lightning",
+    "TSFEDL",
+    "flexanomalies",
+    "flex",
+    "plotly",
+    "umap",
+    "tqdm",
+    "requests",
+    "ucimlrepo",
+    "seaborn",
+    "matplotlib",
+]
