@@ -1,0 +1,13 @@
+dataset,algorithm,average_platform_time_s,average_base_time_s,overhead_s,speedup_base_over_platform,platform_roc_auc_scores,base_roc_auc_scores,roc_auc_diff
+arrhythmia,knn,0.0026,0.0028,-0.0002,1.0755,0.7755,0.7755,0.0
+arrhythmia,lof,0.0018,0.0018,-0.0,1.0169,0.751,0.751,0.0
+arrhythmia,iforest,0.0924,0.0929,-0.0004,1.0046,0.8327,0.8327,0.0
+arrhythmia,cblof,0.0036,0.0035,0.0001,0.9697,0.7837,0.7633,0.0204
+arrhythmia,ocsvm,0.0058,0.0057,0.0002,0.9695,0.751,0.751,0.0
+arrhythmia,hbos,0.025,0.0242,0.0009,0.9656,0.8286,0.8286,0.0
+shuttle,cblof,0.0087,0.0098,-0.0011,1.1257,0.9505,0.9515,-0.001
+shuttle,knn,0.173,0.1827,-0.0097,1.0561,0.9933,0.9933,0.0
+shuttle,iforest,0.1664,0.1718,-0.0054,1.0323,0.8831,0.8831,0.0
+shuttle,lof,0.1689,0.1709,-0.0021,1.0122,0.9876,0.9876,0.0
+shuttle,hbos,0.0024,0.0024,0.0,0.999,0.8819,0.8819,0.0
+shuttle,ocsvm,1.8513,1.8091,0.0422,0.9772,0.9094,0.9094,0.0

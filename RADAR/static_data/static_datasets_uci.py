@@ -75,6 +75,19 @@ def load_from_url(url, **kwargs):
     dataset = pd.read_csv(BytesIO(data), **kwargs)
     return dataset
 
+
+def load_arrhythmia(url, **kwargs):
+    """Load the Arrhythmia dataset and split features/target.
+
+    The raw UCI file stores the class label in the last column and uses '?'
+    for missing values.
+    """
+
+    dataset = load_from_url(url, **kwargs)
+    X = dataset.iloc[:, :-1]
+    y = dataset.iloc[:, -1]
+    return np.array(X), np.array(y)
+
 def load_human_activity_recognition(url,**kwargs):
     response = requests.get(url)
 
@@ -137,9 +150,11 @@ datasets = {
     "spambase": [load_from_id, {"id": 94}],
     "mammographic_mass": [load_from_id, {"id": 161}],
     "arrhythmia": [
-        load_from_url,
+        load_arrhythmia,
         {
             "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/arrhythmia/arrhythmia.data",
+            "header": None,
+            "na_values": "?",
         },
     ],
     "default_of_credit_card_clients": [load_from_id, {"id": 350}],

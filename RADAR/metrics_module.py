@@ -1,7 +1,7 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import roc_auc_score, confusion_matrix
+from sklearn.metrics import average_precision_score, roc_auc_score, confusion_matrix
 
 
 def measure(y, y_pred):
@@ -40,6 +40,16 @@ def metric_F1score(y, y_pred):
 
 def metric_AUC_ROC(y, y_pred):
     return roc_auc_score(y, y_pred) if len(np.unique(y)) > 1 else 0
+
+
+def metric_AUC_ROC_scores(y, y_scores):
+    y, y_scores = np.array(y), np.array(y_scores)
+    return roc_auc_score(y, y_scores) if len(np.unique(y)) > 1 else 0
+
+
+def metric_PR_AUC(y, y_scores):
+    y, y_scores = np.array(y), np.array(y_scores)
+    return average_precision_score(y, y_scores) if len(np.unique(y)) > 1 else 0
 
 
 def print_metrics(metrics_list, y, y_pred):
