@@ -1,0 +1,11 @@
+data_type,dataset,algorithm,contamination,accuracy,precision,recall,f1,roc_auc_scores,pr_auc_scores,evaluated_samples,dataset_name,window_size,train_windows,test_windows
+static,arrhythmia,pcaAnomaly,0.0926,0.8889,0.4,0.4,0.4,0.7673,0.5309,54,,,,
+static,arrhythmia,clusterAnomaly,0.0926,0.8889,0.4,0.4,0.4,0.7673,0.5309,54,,,,
+static,arrhythmia,isolationForest,0.0926,0.8889,0.4,0.4,0.4,0.7224,0.2461,54,,,,
+static,shuttle,clusterAnomaly,0.1036,0.9356,0.6892,0.6892,0.6892,0.9682,0.7919,5000,,,,
+static,shuttle,isolationForest,0.1036,0.9184,0.6062,0.6062,0.6062,0.9114,0.6768,5000,,,,
+static,shuttle,pcaAnomaly,0.1036,0.9084,0.5579,0.5579,0.5579,0.7974,0.586,5000,,,,
+time_series,ai4i,autoencoder,0.0339,0.6753,0.4,0.0031,0.0062,0.5147,0.344,1977,ai4i_2020_predictive_maintenance_dataset,24.0,7977.0,1977.0
+time_series,ai4i,deepCNN_LSTM,0.0339,0.6174,0.0456,0.9231,0.087,0.8576,0.1216,1976,ai4i_2020_predictive_maintenance_dataset,24.0,7976.0,1976.0
+time_series,metro_interstate,autoencoder,0.1006,0.2518,1.0,0.0006,0.0011,0.4835,0.7441,9618,metro_interstate_traffic_volume,24.0,38540.0,9618.0
+time_series,metro_interstate,deepCNN_LSTM,0.1006,0.614,0.0942,0.3614,0.1494,0.5058,0.0975,9617,metro_interstate_traffic_volume,24.0,38539.0,9617.0

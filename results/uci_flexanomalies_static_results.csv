@@ -1,0 +1,7 @@
+data_type,dataset,algorithm,contamination,accuracy,precision,recall,f1,roc_auc_scores,pr_auc_scores,evaluated_samples
+static,arrhythmia,pcaAnomaly,0.0926,0.8889,0.4,0.4,0.4,0.7673,0.5309,54
+static,arrhythmia,clusterAnomaly,0.0926,0.8889,0.4,0.4,0.4,0.7673,0.5309,54
+static,arrhythmia,isolationForest,0.0926,0.8889,0.4,0.4,0.4,0.7224,0.2461,54
+static,shuttle,clusterAnomaly,0.1036,0.9356,0.6892,0.6892,0.6892,0.9682,0.7919,5000
+static,shuttle,isolationForest,0.1036,0.9184,0.6062,0.6062,0.6062,0.9114,0.6768,5000
+static,shuttle,pcaAnomaly,0.1036,0.9084,0.5579,0.5579,0.5579,0.7974,0.586,5000
