@@ -139,7 +139,7 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
         return torch.cat(preds, dim=0)
 
     def decision_function(self, X):
-        """Calculates anomaly scores (e.g., reconstruction error)."""
+        """Calculates anomaly scores as reconstruction MSE per sample."""
         self.model.eval()
 
         if isinstance(X, np.ndarray):
@@ -163,8 +163,8 @@ class TransformersAnomalyDetection(BaseAnomalyDetection):
                 decoder_inputs[:, 0] = 0  # or use startup token if applicable
                 
                 outputs, *_ = self.model(inputs,decoder_inputs)
-                # Mean absolute error por muestra
-                batch_scores = torch.mean(torch.abs(inputs - outputs), dim=(1, 2))
+                # Mean squared reconstruction error per sample
+                batch_scores = torch.mean((inputs - outputs) ** 2, dim=(1, 2))
                 scores.append(batch_scores.cpu())
         return torch.cat(scores, dim=0)
 

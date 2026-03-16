@@ -1,0 +1,7 @@
+dataset_name,algorithm,mse,train_time_s,inference_time_s
+ai4i_2020_predictive_maintenance_dataset,autoformer,0.449264,76.656,13.8447
+ai4i_2020_predictive_maintenance_dataset,informer,0.731394,42.6375,6.6752
+ai4i_2020_predictive_maintenance_dataset,transformer,1.177023,75.1058,5.7113
+metro_interstate_traffic_volume,autoformer,0.144859,352.3397,63.757
+metro_interstate_traffic_volume,transformer,0.309132,291.6034,20.1402
+metro_interstate_traffic_volume,informer,0.37513,163.5178,26.5549
