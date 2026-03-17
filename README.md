@@ -74,6 +74,30 @@ Install the necessary dependencies:
 pip install -r requirements.txt 
 ```
 
+## Terminal experiments
+
+The notebook experiments for Transformer, TSFEDL, and FlexAnomalies time-series models also have terminal-ready entry points in [scripts](scripts):
+
+- [scripts/experiment_transformers_models.py](scripts/experiment_transformers_models.py)
+- [scripts/experiment_tsfedl_models.py](scripts/experiment_tsfedl_models.py)
+- [scripts/experiment_flexanomalies_time_series.py](scripts/experiment_flexanomalies_time_series.py)
+
+Each script keeps the notebook defaults but can be launched as a regular `main` process, for example:
+
+```bash
+python scripts/experiment_transformers_models.py --results-dir results
+python scripts/experiment_tsfedl_models.py --results-dir results
+python scripts/experiment_flexanomalies_time_series.py --results-dir results
+```
+
+For Slurm environments, ready-to-edit launchers are included in [scripts/slurm](scripts/slurm):
+
+```bash
+sbatch scripts/slurm/experiment_transformers_models.sbatch
+sbatch scripts/slurm/experiment_tsfedl_models.sbatch
+sbatch scripts/slurm/experiment_flexanomalies_time_series.sbatch
+```
+
 
 ## License
 

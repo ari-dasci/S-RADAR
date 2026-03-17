@@ -1,5 +1,0 @@
-data_type,dataset,dataset_name,algorithm,window_size,contamination,train_windows,test_windows,accuracy,precision,recall,mse,evaluated_samples
-time_series,ai4i,ai4i_2020_predictive_maintenance_dataset,autoencoder,24,0.0339,7977,1977,0.6753,0.4,0.0031,0.190724,1977
-time_series,ai4i,ai4i_2020_predictive_maintenance_dataset,deepCNN_LSTM,24,0.0339,7976,1976,0.623,0.0474,0.9487,1.546393,1976
-time_series,metro_interstate,metro_interstate_traffic_volume,autoencoder,24,0.1006,38540,9618,0.2518,1.0,0.0006,0.031686,9618
-time_series,metro_interstate,metro_interstate_traffic_volume,deepCNN_LSTM,24,0.1006,38539,9617,0.5727,0.0952,0.418,0.736678,9617
