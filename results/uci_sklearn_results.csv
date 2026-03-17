@@ -1,5 +1,0 @@
-dataset,algorithm,status,accuracy,precision,recall,f1,roc_auc_scores,pr_auc_scores
-arrhythmia,elliptic,failed,,,,,,
-arrhythmia,sgdocsvm,ok,0.9074,0.0,0.0,0.0,0.7959,0.2794
-shuttle,sgdocsvm,ok,0.8318,0.0208,0.0135,0.0164,0.838,0.4615
-shuttle,elliptic,ok,0.8764,0.434,0.6351,0.5157,0.1045,0.0562

@@ -1,7 +1,0 @@
-dataset_key,dataset_name,algorithm,window_size,n_features,train_windows,test_windows,train_time_s,inference_time_s,mse
-ai4i,ai4i_2020_predictive_maintenance_dataset,autoformer,24,5,7977,1977,1459.886,40.5431,0.492974
-ai4i,ai4i_2020_predictive_maintenance_dataset,informer,24,5,7977,1977,564.3655,14.8498,0.688358
-ai4i,ai4i_2020_predictive_maintenance_dataset,transformer,24,5,7977,1977,466.1016,11.0121,0.701193
-metro_interstate,metro_interstate_traffic_volume,autoformer,24,4,38540,9618,7473.813,197.8128,0.147994
-metro_interstate,metro_interstate_traffic_volume,transformer,24,4,38540,9618,2228.0092,50.5274,0.190964
-metro_interstate,metro_interstate_traffic_volume,informer,24,4,38540,9618,2966.8374,80.3793,0.388237

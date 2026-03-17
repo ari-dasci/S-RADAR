@@ -168,3 +168,5 @@ cython_debug/
 #.idea/
 datasets/
 scripts/
+jobs_logs/
+results/
