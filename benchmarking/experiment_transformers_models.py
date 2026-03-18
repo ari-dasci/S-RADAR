@@ -164,11 +164,9 @@ def run_experiment(args: argparse.Namespace) -> tuple[pd.DataFrame, pd.DataFrame
             model.fit(config["X_train_windows"])
             train_time = time.time() - train_start
 
-            inference_start = time.time()
             scores = tensor_to_numpy(
                 model.decision_function(config["X_test_windows"])
             ).ravel()
-            inference_time = time.time() - inference_start
 
             finite_scores = bool(np.isfinite(scores).all())
             mse = summarize_mse(scores) if finite_scores else np.nan
@@ -189,8 +187,7 @@ def run_experiment(args: argparse.Namespace) -> tuple[pd.DataFrame, pd.DataFrame
                     "n_features": input_dim,
                     "train_windows": config["train_windows"],
                     "test_windows": config["test_windows"],
-                    "train_time_s": round(train_time, 4),
-                    "inference_time_s": round(inference_time, 4),
+                    "platform_time_s": round(train_time, 4),
                     "mse": round(float(mse), 6) if np.isfinite(mse) else np.nan,
                 }
             )
@@ -210,8 +207,7 @@ def run_experiment(args: argparse.Namespace) -> tuple[pd.DataFrame, pd.DataFrame
         .agg(
             {
                 "mse": "min",
-                "train_time_s": "mean",
-                "inference_time_s": "mean",
+                "platform_time_s": "mean",
             }
         )
         .sort_values(

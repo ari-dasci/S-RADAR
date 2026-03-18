@@ -1,27 +1,6 @@
 """
 Experiment script for TSFEDL time-series anomaly detection models.
-
-Uses all 23 TSFEDL models available in the RADAR platform, evaluated on
-two UCI datasets (ai4i and metro_interstate), following the same structure
-as experiment_transformers_models.py.
-
-Each TSFEDL model is a PyTorch Lightning autoencoder.  The platform class
-``TsfedlAnomalyDetection`` wraps them uniformly and exposes fit /
-decision_function / predict.
-
-Key TSFEDL parameters
----------------------
-- algorithm_     : str   – model name (key into the tsfedl_algorithms dict).
-- top_module     : nn.Module – a *Forecaster* head that defines the output
-                   reconstruction shape.
-- in_features    : int   – in the faithful TSFEDL path this means the number
-                   of channels / input features for CNN models, and the
-                   per-timestep feature size for GenMinxing (LSTM-only).
-- input_shape    : tuple – used by YildirimOzal instead of `in_features`.
-- loss           : Loss  – reconstruction loss (MSELoss for autoencoders).
-- max_epochs     : int   – PyTorch-Lightning Trainer epochs.
-- batch_size     : int   – DataLoader batch size.
-
+Uses all 23 TSFEDL models available in the RADAR platform.
 Dimensional mapping (faithful TSFEDL mode)
 ------------------------------------------
     RADAR windows:        (N, window_size, n_features)
