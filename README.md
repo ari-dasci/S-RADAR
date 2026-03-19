@@ -68,6 +68,13 @@ Clone the repository:
 git clone https://github.com/ari-dasci/RADAR.git
 ```
 
+PyPi:
+The module is uploaded to PyPi for an easy installation:
+```bash
+pip install anomaly-radar
+```
+
+
 Install the necessary dependencies:
 
 ```bash
