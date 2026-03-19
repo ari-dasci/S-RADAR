@@ -17,6 +17,34 @@ from pyod.models.inne import INNE
 from pyod.models.gmm import GMM
 from pyod.models.kde import KDE
 from pyod.models.lmdd import LMDD
+# Modelos clásicos adicionales
+from pyod.models.copod import COPOD
+from pyod.models.ecod import ECOD
+from pyod.models.cof import COF
+from pyod.models.sod import SOD
+from pyod.models.sos import SOS
+from pyod.models.loda import LODA
+from pyod.models.loci import LOCI
+from pyod.models.mad import MAD
+from pyod.models.kpca import KPCA
+from pyod.models.rod import ROD
+from pyod.models.qmcd import QMCD
+from pyod.models.sampling import Sampling
+from pyod.models.cd import CD
+from pyod.models.rgraph import RGraph
+# Modelos de Deep Learning
+from pyod.models.auto_encoder import AutoEncoder
+from pyod.models.vae import VAE
+from pyod.models.deep_svdd import DeepSVDD
+from pyod.models.ae1svm import AE1SVM
+from pyod.models.devnet import DevNet
+from pyod.models.so_gaal import SO_GAAL
+from pyod.models.mo_gaal import MO_GAAL
+from pyod.models.dif import DIF
+from pyod.models.lunar import LUNAR
+# Modelos con dependencias extra (requieren: pip install suod, pip install xgboost)
+from pyod.models.suod import SUOD
+from pyod.models.xgbod import XGBOD
 import numpy as np
 
 from inspect import signature
@@ -39,6 +67,33 @@ pyod_algorithms = {
     "gmm" : GMM,
     "kde" : KDE,
     "lmdd" : LMDD,
+    # Classical models
+    "copod": COPOD,
+    "ecod": ECOD,
+    "cof": COF,
+    "sod": SOD,
+    "sos": SOS,
+    "loda": LODA,
+    "loci": LOCI,
+    "mad": MAD,
+    "kpca": KPCA,
+    "rod": ROD,
+    "qmcd": QMCD,
+    "sampling": Sampling,
+    "cd": CD,
+    "rgraph": RGraph,
+    # Deep Learning models
+    "auto_encoder": AutoEncoder,
+    "vae": VAE,
+    "deep_svdd": DeepSVDD,
+    "ae1svm": AE1SVM,
+    "devnet": DevNet,
+    "so_gaal": SO_GAAL,
+    "mo_gaal": MO_GAAL,
+    "dif": DIF,
+    "lunar": LUNAR,
+    "suod": SUOD,
+    "xgbod": XGBOD,
 }
 
 class PyodAnomalyDetection(BaseAnomalyDetection):
