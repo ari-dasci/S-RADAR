@@ -35,7 +35,8 @@ def global_load(name_dataset):
     method_load = datasets[name_dataset][0]
     kwargs = datasets[name_dataset][1]
     return method_load(**kwargs)
-    
+
+
 # fetch dataset
 def load_from_id(id):
     """
@@ -52,11 +53,11 @@ def load_from_id(id):
     dataset = fetch_ucirepo(id=id)
     X = dataset.data.features
     y = dataset.data.targets
-    
-    print("Metadata:",dataset.metadata)
-    # variable information 
+
+    print("Metadata:", dataset.metadata)
+    # variable information
     print("Variable information:", dataset.variables)
-    return np.array(X),np.array(y)
+    return np.array(X), np.array(y)
 
 
 def load_from_url(url, **kwargs):
@@ -70,7 +71,7 @@ def load_from_url(url, **kwargs):
     Returns:
         pd.DataFrame: The dataset loaded from the URL.
     """
-    
+
     data = requests.get(url).content
     dataset = pd.read_csv(BytesIO(data), **kwargs)
     return dataset
@@ -88,7 +89,8 @@ def load_arrhythmia(url, **kwargs):
     y = dataset.iloc[:, -1]
     return np.array(X), np.array(y)
 
-def load_human_activity_recognition(url,**kwargs):
+
+def load_human_activity_recognition(url, **kwargs):
     response = requests.get(url)
 
     # Descomprimir el archivo ZIP
@@ -106,35 +108,35 @@ def load_human_activity_recognition(url,**kwargs):
     X_train = pd.read_csv("UCI_HAR/UCI HAR Dataset/train/X_train.txt", **kwargs)
     X_test = pd.read_csv("UCI_HAR/UCI HAR Dataset/test/X_test.txt", **kwargs)
 
-    y_train = pd.read_csv("UCI_HAR/UCI HAR Dataset/train/y_train.txt",**kwargs)
+    y_train = pd.read_csv("UCI_HAR/UCI HAR Dataset/train/y_train.txt", **kwargs)
     y_test = pd.read_csv("UCI_HAR/UCI HAR Dataset/test/y_test.txt", **kwargs)
-    
-    return np.array(X_train),np.array(X_test),np.array(y_train),np.array(y_test)
-    
-def load_kddcup99(data_url,names_url,**kwargs):
+
+    return np.array(X_train), np.array(X_test), np.array(y_train), np.array(y_test)
+
+
+def load_kddcup99(data_url, names_url, **kwargs):
     """Reads the KDD Cup 99 dataset and processes it."""
 
     print("Downloading dataset...")
     data = load_from_url(data_url, **kwargs)
-    
+
     print("Downloading names file...")
     response = requests.get(names_url)
     response.raise_for_status()
     lines = response.text.splitlines()
-    
-    attack_types = lines[0].strip().split(',')
-    variable_names = [line.split(':')[0] for line in lines[1:]] + ["attack_type"]
+
+    attack_types = lines[0].strip().split(",")
+    variable_names = [line.split(":")[0] for line in lines[1:]] + ["attack_type"]
     data.columns = variable_names
-    
+
     # Clean data
-    data["attack_type"] = data["attack_type"].str.replace('\.', '', regex=True)
-    
-        
+    data["attack_type"] = data["attack_type"].str.replace("\.", "", regex=True)
+
     attack_class = data.pop("attack_type").values
     attack_types[-1] = attack_types[-1].strip()
-    
-    return data, attack_types, attack_class    
-    
+
+    return data, attack_types, attack_class
+
 
 datasets = {
     "shuttle": [load_from_id, {"id": 148}],
@@ -142,8 +144,8 @@ datasets = {
         load_kddcup99,
         {
             "data_url": "http://kdd.ics.uci.edu/databases/kddcup99/kddcup.data.gz",
-            "names_url":'http://kdd.ics.uci.edu/databases/kddcup99/kddcup.names',
-            "header":None,
+            "names_url": "http://kdd.ics.uci.edu/databases/kddcup99/kddcup.names",
+            "header": None,
             "compression": "gzip",
         },
     ],
@@ -158,13 +160,18 @@ datasets = {
         },
     ],
     "default_of_credit_card_clients": [load_from_id, {"id": 350}],
-    "detection_of_IoT_botnet_attacks_N_BaIoT":[
+    "detection_of_IoT_botnet_attacks_N_BaIoT": [
         load_from_url,
         {
             "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/00442/Philips_B120N10_Baby_Monitor/benign_traffic.csv",
         },
     ],
-    'wine_quality':[load_from_id, {"id": 186}],
-    
-    'human_activity_recognition':[load_human_activity_recognition, {"url": "https://archive.ics.uci.edu/ml/machine-learning-databases/00240/UCI%20HAR%20Dataset.zip", 'header':None, 'delim_whitespace':True}]
+    "human_activity_recognition": [
+        load_human_activity_recognition,
+        {
+            "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/00240/UCI%20HAR%20Dataset.zip",
+            "header": None,
+            "delim_whitespace": True,
+        },
+    ],
 }
