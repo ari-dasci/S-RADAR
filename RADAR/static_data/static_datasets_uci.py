@@ -127,6 +127,17 @@ def load_kddcup99(**kwargs):
 
     data = bunch.data  # features DataFrame
 
+    # Decode any byte-string columns and one-hot encode categoricals so the
+    # downstream pipeline always receives a fully numeric DataFrame.
+    for col in data.columns:
+        if data[col].dtype == object:
+            data[col] = data[col].apply(
+                lambda v: v.decode() if isinstance(v, bytes) else v
+            )
+    cat_cols = data.select_dtypes(include=["object", "category"]).columns.tolist()
+    if cat_cols:
+        data = pd.get_dummies(data, columns=cat_cols, drop_first=True)
+
     # sklearn returns target labels as bytes like b'normal.' — decode & strip dot
     attack_class = bunch.target.astype(str).str.rstrip(".").values
     attack_types = sorted(set(attack_class))
