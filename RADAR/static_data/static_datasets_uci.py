@@ -119,13 +119,31 @@ def load_kddcup99(**kwargs):
 
     The original kdd.ics.uci.edu URLs are no longer available, so we rely on
     sklearn which handles mirror selection and local caching automatically.
+
+    Uses the 10 % subset (percent10=True) and then takes a stratified sample
+    of ~10 000 rows so the frontend stays responsive.
     """
     from sklearn.datasets import fetch_kddcup99
 
-    print("Downloading KDD Cup 99 dataset via sklearn...")
-    bunch = fetch_kddcup99(as_frame=True)
+    print("Downloading KDD Cup 99 dataset (10% subset) via sklearn...")
+    bunch = fetch_kddcup99(as_frame=True, percent10=True)
 
     data = bunch.data  # features DataFrame
+    target = bunch.target.astype(str).str.rstrip(".")
+
+    # --- Stratified sub-sample to keep the frontend responsive ---------------
+    MAX_ROWS = 20_000
+    if len(data) > MAX_ROWS:
+        from sklearn.model_selection import train_test_split
+        _, data, _, target = train_test_split(
+            data, target,
+            test_size=MAX_ROWS / len(data),
+            stratify=target,
+            random_state=42,
+        )
+        data = data.reset_index(drop=True)
+        target = target.reset_index(drop=True)
+    # -------------------------------------------------------------------------
 
     # Decode any byte-string columns and one-hot encode categoricals so the
     # downstream pipeline always receives a fully numeric DataFrame.
@@ -138,11 +156,11 @@ def load_kddcup99(**kwargs):
     if cat_cols:
         data = pd.get_dummies(data, columns=cat_cols, drop_first=True)
 
-    # sklearn returns target labels as bytes like b'normal.' — decode & strip dot
-    attack_class = bunch.target.astype(str).str.rstrip(".").values
+    attack_class = target.values
     attack_types = sorted(set(attack_class))
 
     return data, attack_types, attack_class
+
 
 
 datasets = {
