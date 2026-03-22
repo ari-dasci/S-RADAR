@@ -114,41 +114,29 @@ def load_human_activity_recognition(url, **kwargs):
     return np.array(X_train), np.array(X_test), np.array(y_train), np.array(y_test)
 
 
-def load_kddcup99(data_url, names_url, **kwargs):
-    """Reads the KDD Cup 99 dataset and processes it."""
+def load_kddcup99(**kwargs):
+    """Reads the KDD Cup 99 dataset using sklearn's built-in fetcher.
 
-    print("Downloading dataset...")
-    data = load_from_url(data_url, **kwargs)
+    The original kdd.ics.uci.edu URLs are no longer available, so we rely on
+    sklearn which handles mirror selection and local caching automatically.
+    """
+    from sklearn.datasets import fetch_kddcup99
 
-    print("Downloading names file...")
-    response = requests.get(names_url)
-    response.raise_for_status()
-    lines = response.text.splitlines()
+    print("Downloading KDD Cup 99 dataset via sklearn...")
+    bunch = fetch_kddcup99(as_frame=True)
 
-    attack_types = lines[0].strip().split(",")
-    variable_names = [line.split(":")[0] for line in lines[1:]] + ["attack_type"]
-    data.columns = variable_names
+    data = bunch.data  # features DataFrame
 
-    # Clean data
-    data["attack_type"] = data["attack_type"].str.replace("\.", "", regex=True)
-
-    attack_class = data.pop("attack_type").values
-    attack_types[-1] = attack_types[-1].strip()
+    # sklearn returns target labels as bytes like b'normal.' — decode & strip dot
+    attack_class = bunch.target.astype(str).str.rstrip(".").values
+    attack_types = sorted(set(attack_class))
 
     return data, attack_types, attack_class
 
 
 datasets = {
     "shuttle": [load_from_id, {"id": 148}],
-    "kddcup99": [
-        load_kddcup99,
-        {
-            "data_url": "http://kdd.ics.uci.edu/databases/kddcup99/kddcup.data.gz",
-            "names_url": "http://kdd.ics.uci.edu/databases/kddcup99/kddcup.names",
-            "header": None,
-            "compression": "gzip",
-        },
-    ],
+    "kddcup99": [load_kddcup99, {}],
     "spambase": [load_from_id, {"id": 94}],
     "mammographic_mass": [load_from_id, {"id": 161}],
     "arrhythmia": [
