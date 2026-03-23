@@ -166,7 +166,7 @@ CLASSICAL_MODELS = [
     {"algorithm_": "copod"},
     {"algorithm_": "ecod"},
     {"algorithm_": "cof", "n_neighbors": 5},
-    {"algorithm_": "sod", "n_neighbors": 5},
+    {"algorithm_": "sod", "n_neighbors": 5, "ref_set": 3}, 
     {"algorithm_": "sos"},
     {"algorithm_": "loda"},
     # {"algorithm_": "loci"},  # Skipped: extremely slow on large datasets
